@@ -187,14 +187,28 @@
         // ===================================================
         // 1. TEMPELKAN FIREBASE CONFIG KAMU DI SINI:
         // ===================================================
-        const firebaseConfig = {
-            apiKey: "PASTE_API_KEY_KAMU_DI_SINI",
-            authDomain: "PASTE_AUTH_DOMAIN_DI_SINI",
-            databaseURL: "PASTE_DATABASE_URL_DI_SINI",
-            projectId: "PASTE_PROJECT_ID_DI_SINI",
-            storageBucket: "PASTE_STORAGE_BUCKET_DI_SINI",
-            messagingSenderId: "PASTE_MESSAGING_SENDER_ID_DI_SINI",
-            appId: "PASTE_APP_ID_DI_SINI"
+        // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyDHivzKV8jSGIcRIM23NK0p-NUpZ6mXinc",
+  authDomain: "content-planner-4f9bf.firebaseapp.com",
+  databaseURL: "https://content-planner-4f9bf-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "content-planner-4f9bf",
+  storageBucket: "content-planner-4f9bf.firebasestorage.app",
+  messagingSenderId: "156234383997",
+  appId: "1:156234383997:web:d2c44154b59ee5c0a5a714",
+  measurementId: "G-H36DC2RWWR"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
         };
 
         // Inisialisasi Firebase

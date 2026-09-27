@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Planner FALFX (Realtime Sync)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2pdf Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Firebase SDK (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+    <!-- Status Koneksi Firebase -->
+    <div id="sync-status" class="bg-indigo-600 text-white text-[11px] font-bold py-1 px-4 text-center transition-all duration-300">
+        🔄 Menghubungkan ke Server Cloud FALFX...
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-900/90 border-b border-slate-800/80 backdrop-blur-md px-6 py-4 flex flex-col lg:flex-row items-center justify-between shadow-2xl gap-4 sticky top-0 z-40">
+        <div class="flex items-center space-x-3.5">
+            <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 text-white p-2.5 rounded-2xl font-bold shadow-lg shadow-indigo-500/30 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h1 class="text-xl font-black tracking-tight text-white">Content Planner <span class="text-indigo-400">FALFX</span></h1>
+                    <span class="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/20 uppercase tracking-wider">⚡ Realtime Cloud</span>
+                </div>
+                <p class="text-xs text-slate-400">Terhubung Langsung Antara Klien & Creator</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <button onclick="requestNotificationPermission()" id="btn-alarm" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5">
+                <span>🔔 Alarm Upload</span>
+            </button>
+            <button onclick="openScheduleModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold px-3.5 py-2 rounded-xl transition flex items-center space-x-1.5">
+                <span>📅 Pengaturan Libur</span>
+            </button>
+            <button onclick="openExportModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center space-x-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Ekspor PDF</span>
+            </button>
+            <button onclick="openProjectModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center space-x-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>+ Project Baru</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Sidebar: Projects & Folders -->
+        <aside class="w-80 bg-slate-900/60 border-r border-slate-800/80 flex flex-col p-4 overflow-y-auto custom-scrollbar">
+            <div class="flex items-center justify-between mb-3 px-2">
+                <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Proyek & Plan Bulanan</span>
+                <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-semibold" id="sidebar-proj-count">0 Proyek</span>
+            </div>
+            <div id="project-list" class="space-y-4">
+                <!-- Dynamic Project List -->
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 bg-slate-950 p-6 md:p-8 overflow-y-auto custom-scrollbar flex flex-col">
+            
+            <!-- Empty Selection State -->
+            <div id="no-selection" class="flex-1 flex flex-col items-center justify-center text-center p-8">
+                <div class="bg-slate-900/80 p-8 rounded-3xl border border-slate-800 shadow-2xl max-w-md backdrop-blur-md">
+                    <div class="w-20 h-20 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-indigo-500/20 shadow-inner">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Pilih Plan Folder FALFX</h3>
+                    <p class="text-xs text-slate-400 mb-6 leading-relaxed">Pilih salah satu folder Plan di sidebar sebelah kiri atau buat Proyek baru untuk mulai menyusun jadwal konten visualmu.</p>
+                    <button onclick="openProjectModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-5 py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">Buat Project Pertama</button>
+                </div>
+            </div>
+
+            <!-- Workspace Loaded State -->
+            <div id="workspace-content" class="hidden flex-1 flex flex-col">
+                <!-- Header Breadcrumb & Actions -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-800/80 mb-6 gap-4">
+                    <div class="flex items-center space-x-4">
+                        <div id="project-logo-display" class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-lg"></div>
+                        <div>
+                            <div class="flex items-center space-x-2 text-xs text-indigo-400 font-semibold mb-0.5">
+                                <span id="bc-project-name">Project Name</span>
+                                <span>/</span>
+                                <span id="bc-folder-name" class="text-slate-300">Plan Bulan</span>
+                            </div>
+                            <h2 id="workspace-title" class="text-2xl font-black text-white tracking-tight">Detail Content Plan</h2>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2.5">
+                        <button onclick="openContentModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center space-x-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            <span>Tambah Konten</span>
+                        </button>
+                        <button onclick="openPlanModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-xl border border-slate-700 transition flex items-center space-x-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <span>+ Folder Plan</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Info Alert Banner -->
+                <div class="mb-6 bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-300 gap-3 shadow-md">
+                    <div class="flex items-center space-x-3">
+                        <span class="bg-indigo-500/20 text-indigo-400 p-2 rounded-xl text-base">🏖️</span>
+                        <div>
+                            <span class="font-semibold text-white">Aturan Libur Kerja:</span>
+                            <span id="rest-days-display" class="text-indigo-300 ml-1 font-bold">Sabtu & Minggu</span>
+                            <span id="specific-holidays-display" class="text-slate-400 ml-1"></span>
+                        </div>
+                    </div>
+                    <button onclick="openScheduleModal()" class="text-indigo-400 hover:text-indigo-300 font-semibold text-xs underline shrink-0">Kelola Libur & Tanggal Merah</button>
+                </div>
+
+                <!-- Interactive Dashboard Stat Cards -->
+                <div class="mb-3 flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ringkasan & Filter Cepat (Klik Kartu)</span>
+                    <span id="active-filter-indicator" class="text-xs text-indigo-400 font-semibold bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20">Menampilkan: Semua Konten</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">
+                    <div onclick="toggleFilter('all')" id="card-filter-all" class="bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 p-4 rounded-2xl cursor-pointer transition shadow-lg group active:scale-95 ring-2 ring-indigo-500">
+                        <div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold text-slate-400">Total Konten</span><span class="text-lg">📦</span></div>
+                        <h3 id="stat-total" class="text-2xl font-black text-white">0</h3>
+                    </div>
+                    <div onclick="toggleFilter('video')" id="card-filter-video" class="bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 p-4 rounded-2xl cursor-pointer transition shadow-lg group active:scale-95">
+                        <div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold text-indigo-400">Total Video</span><span class="text-lg">🎥</span></div>
+                        <h3 id="stat-video" class="text-2xl font-black text-white">0</h3>
+                    </div>
+                    <div onclick="toggleFilter('foto')" id="card-filter-foto" class="bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 p-4 rounded-2xl cursor-pointer transition shadow-lg group active:scale-95">
+                        <div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold text-purple-400">Total Foto</span><span class="text-lg">📸</span></div>
+                        <h3 id="stat-foto" class="text-2xl font-black text-white">0</h3>
+                    </div>
+                    <div onclick="toggleFilter('process')" id="card-filter-process" class="bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 p-4 rounded-2xl cursor-pointer transition shadow-lg group active:scale-95">
+                        <div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold text-amber-400">Dalam Proses</span><span class="text-lg">⏳</span></div>
+                        <h3 id="stat-process" class="text-2xl font-black text-white">0</h3>
+                    </div>
+                    <div onclick="toggleFilter('done')" id="card-filter-done" class="bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 p-4 rounded-2xl cursor-pointer transition shadow-lg group active:scale-95">
+                        <div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold text-emerald-400">Done / Uploaded</span><span class="text-lg">✨</span></div>
+                        <h3 id="stat-uploaded" class="text-2xl font-black text-white">0</h3>
+                    </div>
+                </div>
+
+                <!-- Table Content Container -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex-1 flex flex-col">
+                    <div class="overflow-x-auto flex-1 custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-800/60 text-slate-400 text-[11px] uppercase tracking-wider border-b border-slate-800">
+                                    <th class="py-3.5 px-4 font-bold">Week</th>
+                                    <th class="py-3.5 px-4 font-bold">Jadwal Upload</th>
+                                    <th class="py-3.5 px-4 font-bold">Nama Konten</th>
+                                    <th class="py-3.5 px-4 font-bold">Jenis Konten</th>
+                                    <th class="py-3.5 px-4 font-bold">Take / Edit</th>
+                                    <th class="py-3.5 px-4 font-bold">Status</th>
+                                    <th class="py-3.5 px-4 font-bold">Link & Keterangan</th>
+                                    <th class="py-3.5 px-4 font-bold text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="content-table-body" class="divide-y divide-slate-800/60 text-xs"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals & Scripts -->
+    <div id="pdf-export-container" class="hidden"></div>
+
+    <!-- Script Logic -->
+    <script>
+        // ===================================================
+        // 1. TEMPELKAN FIREBASE CONFIG KAMU DI SINI:
+        // ===================================================
+        const firebaseConfig = {
+            apiKey: "PASTE_API_KEY_KAMU_DI_SINI",
+            authDomain: "PASTE_AUTH_DOMAIN_DI_SINI",
+            databaseURL: "PASTE_DATABASE_URL_DI_SINI",
+            projectId: "PASTE_PROJECT_ID_DI_SINI",
+            storageBucket: "PASTE_STORAGE_BUCKET_DI_SINI",
+            messagingSenderId: "PASTE_MESSAGING_SENDER_ID_DI_SINI",
+            appId: "PASTE_APP_ID_DI_SINI"
+        };
+
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        const dbRef = firebase.database().ref('falfx_planner_db');
+
+        // State Management
+        let restDays = [0, 6];
+        let specificHolidays = [];
+        let activeFilter = 'all';
+        let db = [];
+        let activeProjectId = null;
+        let activeFolderId = null;
+
+        // Mendengarkan Perubahan Data Cloud secara REALTIME
+        dbRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            const statusEl = document.getElementById('sync-status');
+            
+            if (data) {
+                db = data.projects || [];
+                restDays = data.restDays || [0, 6];
+                specificHolidays = data.specificHolidays || [];
+                
+                statusEl.innerText = "🟢 Terhubung ke Cloud (Realtime Sync Active)";
+                statusEl.className = "bg-emerald-600 text-white text-[11px] font-bold py-1 px-4 text-center";
+            } else {
+                // Inisialisasi data default jika database masih kosong
+                db = [{
+                    id: 'proj_1',
+                    name: 'Sedjaya Lifestyle',
+                    logo: '',
+                    folders: [{
+                        id: 'folder_1',
+                        name: 'Plan Oktober 2026',
+                        items: [{ id: 'c_1', week: 'W1', title: 'Cinematic Reel A New Habit', type: 'Reels / TikTok', uploadDate: '2026-10-01T19:00', take: '2026-09-29T14:00', edit: '2026-09-30', status: 'Done', ref: 'https://tiktok.com', notes: 'Audio Wonderwall Oasis' }]
+                    }]
+                }];
+                saveCloudData();
+            }
+
+            if (!activeProjectId && db.length > 0) {
+                activeProjectId = db[0].id;
+                activeFolderId = db[0].folders[0] ? db[0].folders[0].id : null;
+            }
+
+            updateRestDaysDisplay();
+            renderSidebar();
+            renderWorkspace();
+        }, (error) => {
+            const statusEl = document.getElementById('sync-status');
+            statusEl.innerText = "🔴 Gagal terhubung ke Cloud. Periksa firebaseConfig kamu!";
+            statusEl.className = "bg-red-600 text-white text-[11px] font-bold py-1 px-4 text-center";
+        });
+
+        // Simpan Data ke Cloud
+        function saveCloudData() {
+            dbRef.set({
+                projects: db,
+                restDays: restDays,
+                specificHolidays: specificHolidays
+            });
+        }
+
+        const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+        function updateRestDaysDisplay() {
+            const names = restDays.map(d => dayNames[d]).join(' & ');
+            document.getElementById('rest-days-display').innerText = names || 'Tidak ada libur rutin';
+            const specDisplay = document.getElementById('specific-holidays-display');
+            specDisplay.innerText = specificHolidays.length > 0 ? `(+${specificHolidays.length} Tanggal Merah Khusus)` : '';
+        }
+
+        function toggleFilter(filterName) {
+            activeFilter = (activeFilter === filterName && filterName !== 'all') ? 'all' : filterName;
+            ['all', 'video', 'foto', 'process', 'done'].forEach(f => {
+                const el = document.getElementById(`card-filter-${f}`);
+                if (f === activeFilter) el.classList.add('ring-2', 'ring-indigo-500');
+                else el.classList.remove('ring-2', 'ring-indigo-500');
+            });
+            renderWorkspace();
+        }
+
+        function renderSidebar() {
+            const listContainer = document.getElementById('project-list');
+            listContainer.innerHTML = '';
+            document.getElementById('sidebar-proj-count').innerText = `${db.length} Proyek`;
+
+            db.forEach(project => {
+                const projDiv = document.createElement('div');
+                projDiv.className = 'space-y-1';
+                const logoHTML = project.logo 
+                    ? `<img src="${project.logo}" class="w-5 h-5 rounded-md object-cover shrink-0">` 
+                    : `<span class="w-5 h-5 rounded-md bg-indigo-500/20 text-indigo-400 text-[10px] font-bold flex items-center justify-center shrink-0">${project.name.charAt(0)}</span>`;
+
+                projDiv.innerHTML = `
+                    <div class="flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-800/50 text-xs font-bold text-white border border-slate-800">
+                        <div class="flex items-center space-x-2 truncate">${logoHTML}<span class="truncate">${project.name}</span></div>
+                        <button onclick="deleteProject('${project.id}')" class="text-slate-500 hover:text-red-400 text-xs p-1">🗑️</button>
+                    </div>
+                `;
+
+                const foldersDiv = document.createElement('div');
+                foldersDiv.className = 'pl-3 space-y-1 mt-1 border-l border-slate-800 ml-3.5';
+
+                project.folders.forEach(folder => {
+                    const isSelected = (project.id === activeProjectId && folder.id === activeFolderId);
+                    const fBtn = document.createElement('div');
+                    fBtn.className = `flex items-center justify-between px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition ${isSelected ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`;
+                    fBtn.innerHTML = `
+                        <span onclick="selectFolder('${project.id}', '${folder.id}')" class="truncate flex-1">📁 ${folder.name} (${folder.items ? folder.items.length : 0})</span>
+                        <button onclick="deleteFolder('${project.id}', '${folder.id}')" class="text-slate-400 hover:text-red-300 ml-1">✕</button>
+                    `;
+                    foldersDiv.appendChild(fBtn);
+                });
+
+                projDiv.appendChild(foldersDiv);
+                listContainer.appendChild(projDiv);
+            });
+        }
+
+        function selectFolder(pId, fId) { activeProjectId = pId; activeFolderId = fId; renderSidebar(); renderWorkspace(); }
+
+        function getActiveProjectAndFolder() {
+            const project = db.find(p => p.id === activeProjectId);
+            if (!project) return { project: null, folder: null };
+            const folder = project.folders.find(f => f.id === activeFolderId);
+            return { project, folder };
+        }
+
+        function formatDisplayDateTime(dtStr) {
+            if (!dtStr) return '-';
+            try {
+                const d = new Date(dtStr);
+                if (isNaN(d.getTime())) return dtStr;
+                return d.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB';
+            } catch(e) { return dtStr; }
+        }
+
+        function renderWorkspace() {
+            const { project, folder } = getActiveProjectAndFolder();
+            const noSel = document.getElementById('no-selection');
+            const wsContent = document.getElementById('workspace-content');
+            if (!project || !folder) { noSel.classList.remove('hidden'); wsContent.classList.add('hidden'); return; }
+
+            noSel.classList.add('hidden');
+            wsContent.classList.remove('hidden');
+
+            const logoContainer = document.getElementById('project-logo-display');
+            logoContainer.innerHTML = project.logo 
+                ? `<img src="${project.logo}" class="w-full h-full object-cover">` 
+                : `<span class="text-xl font-black text-indigo-400">${project.name.charAt(0)}</span>`;
+
+            document.getElementById('bc-project-name').innerText = project.name;
+            document.getElementById('bc-folder-name').innerText = folder.name;
+            document.getElementById('workspace-title').innerText = `${project.name} — ${folder.name}`;
+
+            const items = folder.items || [];
+
+            document.getElementById('stat-total').innerText = items.length;
+            document.getElementById('stat-video').innerText = items.filter(i => i.type.includes('Reels') || i.type.includes('Shorts') || i.type.includes('Video')).length;
+            document.getElementById('stat-foto').innerText = items.filter(i => i.type.includes('Foto') || i.type.includes('Carousel') || i.type.includes('Story') || i.type.includes('Feed')).length;
+            document.getElementById('stat-process').innerText = items.filter(i => ['Idea / Draft', 'Planned', 'Take', 'Editing'].includes(i.status)).length;
+            document.getElementById('stat-uploaded').innerText = items.filter(i => i.status === 'Uploaded' || i.status === 'Done').length;
+
+            let filteredItems = items;
+            if (activeFilter === 'video') filteredItems = items.filter(i => i.type.includes('Reels') || i.type.includes('Shorts') || i.type.includes('Video'));
+            else if (activeFilter === 'foto') filteredItems = items.filter(i => i.type.includes('Foto') || i.type.includes('Carousel') || i.type.includes('Story') || i.type.includes('Feed'));
+            else if (activeFilter === 'process') filteredItems = items.filter(i => ['Idea / Draft', 'Planned', 'Take', 'Editing'].includes(i.status));
+            else if (activeFilter === 'done') filteredItems = items.filter(i => i.status === 'Uploaded' || i.status === 'Done');
+
+            const tbody = document.getElementById('content-table-body');
+            tbody.innerHTML = '';
+
+            if (filteredItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-slate-500 text-xs">Belum ada konten di kategori ini.</td></tr>`;
+                return;
+            }
+
+            filteredItems.forEach(item => {
+                const tr = document.createElement('tr');
+                const isDone = (item.status === 'Done');
+                tr.className = isDone ? 'bg-emerald-950/40 border-l-4 border-l-emerald-500 text-emerald-100 hover:bg-emerald-900/50 transition' : 'hover:bg-slate-800/40 transition text-slate-200';
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 font-black ${isDone ? 'text-emerald-400' : 'text-indigo-400'}">${item.week}</td>
+                    <td class="py-3.5 px-4 text-xs font-medium">${formatDisplayDateTime(item.uploadDate)}</td>
+                    <td class="py-3.5 px-4 font-bold ${isDone ? 'line-through text-emerald-300' : 'text-white'}">${item.title}</td>
+                    <td class="py-3.5 px-4 text-xs font-medium">${item.type}</td>
+                    <td class="py-3.5 px-4 text-xs text-slate-400">Take: ${formatDisplayDateTime(item.take)}<br>Edit: ${item.edit || '-'}</td>
+                    <td class="py-3.5 px-4">
+                        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border ${isDone ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-slate-800 text-slate-300 border-slate-700'}">
+                            ${isDone ? '✨ Done' : item.status}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 text-xs max-w-xs truncate text-slate-400">
+                        ${item.ref ? `<a href="${item.ref}" target="_blank" class="text-indigo-400 underline block truncate">🔗 ${item.ref}</a>` : ''}
+                        <span>${item.notes || '-'}</span>
+                    </td>
+                    <td class="py-3.5 px-4 text-right space-x-1">
+                        <button onclick="editContent('${item.id}')" class="hover:text-indigo-400 p-1">✏️</button>
+                        <button onclick="deleteContent('${item.id}')" class="hover:text-red-400 p-1">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -32,7 +32,7 @@
             <div>
                 <div class="flex items-center space-x-2">
                     <h1 class="text-xl font-black tracking-tight text-white">Content Planner <span class="text-indigo-400">FALFX</span></h1>
-                    <span class="bg-indigo-500/10 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/20 uppercase tracking-wider">Pro v3.2</span>
+                    <span class="bg-indigo-500/10 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/20 uppercase tracking-wider">Pro v3.3 (Fix PDF)</span>
                 </div>
                 <p class="text-xs text-slate-400">Smart Scheduling, Secure Folder Access & Realtime Sync</p>
             </div>
@@ -166,14 +166,29 @@
         </main>
     </div>
 
-    <div id="pdf-export-container" class="hidden"></div>
+    <!-- Hidden Container untuk PDF Render (Fix Bug PDF Kosong) -->
+    <div id="pdf-export-container" style="position: absolute; left: -9999px; top: -9999px;"></div>
 
     <!-- Modal: Secret Owner / Schedule, Rest Dates & Project Passwords -->
     <div id="schedule-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg p-6 rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <h3 class="text-lg font-extrabold text-white mb-1">Pengaturan Privasi & Info Project Owner</h3>
-            <p class="text-xs text-slate-400 mb-5">Atur hari libur rutin, tanggal libur khusus, serta daftar PIN sandi seluruh project.</p>
-            <div class="space-y-5">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl p-6 rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <h3 class="text-lg font-extrabold text-white mb-1">Pengaturan Privasi, Kalender Take & Info Owner</h3>
+            <p class="text-xs text-slate-400 mb-5">Atur hari libur rutin, kalender penanda jadwal take, serta daftar PIN sandi seluruh project.</p>
+            <div class="space-y-6">
+                <!-- Kalender Penanda Tanggal Take & Libur -->
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">📅 Kalender Master Jadwal Take & Libur</label>
+                    <p class="text-[11px] text-slate-400 mb-3">Tanggal yang memiliki jadwal take atau hari libur akan ditandai otomatis di bawah ini.</p>
+                    <div id="owner-calendar-view" class="flex justify-center">
+                        <!-- Kalender Inline Flatpickr -->
+                        <input type="text" id="inline-calendar-picker" class="hidden">
+                    </div>
+                    <div id="calendar-legend" class="flex flex-wrap items-center justify-center gap-3 mt-3 text-[11px] text-slate-300">
+                        <span class="flex items-center space-x-1"><span class="w-3 h-3 bg-indigo-500 rounded-full inline-block"></span><span>Jadwal Take</span></span>
+                        <span class="flex items-center space-x-1"><span class="w-3 h-3 bg-rose-500/80 rounded-full inline-block"></span><span>Hari Libur</span></span>
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2.5">Hari Istirahat Rutin Mingguan</label>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -457,6 +472,7 @@
         let activeFilter = 'all';
         let isAlarmActive = false;
         let isSidebarCollapsed = false;
+        let ownerInlineCalendar = null;
 
         let defaultInitialDB = [{
             id: 'proj_1', name: 'Sedjaya Lifestyle', pin: '1234', logo: '',
@@ -472,10 +488,10 @@
 
         let activeProjectId = null;
         let activeFolderId = null;
-        let unlockedProjects = {}; // Hanya 1 project yang boleh ada di object ini
+        let unlockedProjects = {}; 
         let pendingPinCallback = null;
 
-        // Inisialisasi FLATPICKR (Kalender Pop-up Mewah)
+        // Inisialisasi FLATPICKR (Kalender Pop-up & Inline)
         window.fpSpecificRest = flatpickr("#new-rest-date-input", { dateFormat: "Y-m-d", locale: "id" });
         
         window.fpTake = flatpickr("#c-take", {
@@ -629,7 +645,59 @@
 
         function openScheduleModal() {
             document.querySelectorAll('.rest-day-checkbox').forEach(cb => { cb.checked = restDays.includes(parseInt(cb.value)); });
-            renderSpecificRestDatesList(); renderProjectPasswordsList();
+            renderSpecificRestDatesList(); 
+            renderProjectPasswordsList();
+            
+            // Render Master Kalender Inline dengan Penanda Take & Libur
+            setTimeout(() => {
+                let takeDatesList = [];
+                db.forEach(proj => {
+                    if (proj.folders) {
+                        proj.folders.forEach(f => {
+                            if (f.items) {
+                                f.items.forEach(i => {
+                                    if (i.take) {
+                                        const cleanDate = i.take.split('T')[0];
+                                        if (cleanDate && !takeDatesList.includes(cleanDate)) takeDatesList.push(cleanDate);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+
+                if (ownerInlineCalendar) ownerInlineCalendar.destroy();
+                ownerInlineCalendar = flatpickr("#inline-calendar-picker", {
+                    inline: true,
+                    locale: "id",
+                    dateFormat: "Y-m-d",
+                    onDayCreate: function(dObj, dStr, fp, dayElem) {
+                        const dateFormatted = fp.formatDate(dayElem.dateObj, "Y-m-d");
+                        const dayOfWeek = dayElem.dateObj.getDay();
+                        
+                        let isTake = takeDatesList.includes(dateFormatted);
+                        let isRest = restDays.includes(dayOfWeek) || specificRestDates.includes(dateFormatted);
+
+                        if (isTake) {
+                            dayElem.style.backgroundColor = "#4f46e5";
+                            dayElem.style.color = "#ffffff";
+                            dayElem.style.fontWeight = "bold";
+                            dayElem.title = "Ada Jadwal Take";
+                        }
+                        if (isRest) {
+                            dayElem.style.backgroundColor = "rgba(244, 63, 94, 0.2)";
+                            dayElem.style.color = "#fda4af";
+                            dayElem.style.border = "1px solid rgba(244, 63, 94, 0.4)";
+                            if (isTake) {
+                                dayElem.title = "Libur & Ada Take";
+                            } else {
+                                dayElem.title = "Hari Libur";
+                            }
+                        }
+                    }
+                });
+            }, 100);
+
             document.getElementById('schedule-modal').classList.remove('hidden');
         }
 
@@ -723,27 +791,33 @@
             updateDayLabel('c-edit', 'day-edit-info');
         }
 
+        // Aturan validasi take: bentrok dengan 1 project (dalam 1 project yg sama) tidak masalah, 
+        // namun jika bentrok dengan project lain (project berbeda) baru bermasalah / ditolak.
         function validateTakeSchedule(takeVal, currentItemId) {
             if (!takeVal) return null;
             const takeDateObj = new Date(takeVal);
             if (isNaN(takeDateObj.getTime())) return null;
 
             const dayOfWeek = takeDateObj.getDay();
-            if (restDays.includes(dayOfWeek)) return "maaf waktu sudah terisi project lain / hari libur rutinan";
+            if (restDays.includes(dayOfWeek)) return "Maaf, hari tersebut merupakan hari istirahat/libur rutin mingguan.";
 
             const yyyy = takeDateObj.getFullYear();
             const mm = String(takeDateObj.getMonth() + 1).padStart(2, '0');
             const dd = String(takeDateObj.getDate()).padStart(2, '0');
             const dateStrOnly = `${yyyy}-${mm}-${dd}`;
-            if (specificRestDates.includes(dateStrOnly)) return "maaf waktu sudah terisi project lain (Libur Khusus)";
+            if (specificRestDates.includes(dateStrOnly)) return "Maaf, tanggal tersebut terdaftar sebagai hari libur khusus.";
 
+            // Pengecekan bentrok antar project
             for (const proj of db) {
+                // Jika project ini adalah project aktif saat ini, abaikan pengecekan bentrok internal project (aman jika bentrok dengan 1 project yang sama)
+                if (proj.id === activeProjectId) continue;
+
                 if (!proj.folders) continue;
                 for (const folder of proj.folders) {
                     if (!folder.items) continue;
                     for (const item of folder.items) {
-                        if (item.id !== currentItemId && item.take && item.take === takeVal) {
-                            return "maaf waktu sudah terisi project lain (Jadwal Bentrok)";
+                        if (item.take && item.take === takeVal) {
+                            return `❌ Jadwal bentrok dengan project lain (${proj.name}) pada waktu yang sama. Silakan pilih waktu lain.`;
                         }
                     }
                 }
@@ -826,14 +900,12 @@
             if (!proj) return;
 
             if (unlockedProjects[pId]) {
-                // Jika sedang dibuka (aktif), klik lagi untuk MENGUNCI (Toggle)
                 delete unlockedProjects[pId];
                 if (activeProjectId === pId) { activeProjectId = null; activeFolderId = null; }
                 renderSidebar(); renderWorkspace(); updateHeaderButtonState();
             } else {
-                // Membuka Project baru akan otomatis meminta PIN dan MENGUNCI project lainnya (Isolasi 100%)
                 openPinPrompt(`Buka Folder (${proj.name})`, proj.pin || '1234', () => {
-                    unlockedProjects = {}; // Clear / Lock seluruh project lain
+                    unlockedProjects = {}; 
                     unlockedProjects[pId] = true;
                     activeProjectId = pId;
                     activeFolderId = (proj.folders && proj.folders.length > 0) ? proj.folders[0].id : null; 
@@ -984,7 +1056,7 @@
             const createProj = (logoData) => {
                 const newProj = { id: 'proj_' + Date.now(), name, pin, logo: logoData || '', folders: [{ id: 'f_' + Date.now(), name: folderName, items: [] }] };
                 db.push(newProj); saveDB(); 
-                unlockedProjects = {}; // Lock others for security
+                unlockedProjects = {}; 
                 unlockedProjects[newProj.id] = true;
                 activeProjectId = newProj.id; activeFolderId = newProj.folders[0].id;
                 closeModals(); renderSidebar(); renderWorkspace(); updateHeaderButtonState();
@@ -1064,7 +1136,6 @@
             document.getElementById('c-ref').value = item.ref || '';
             document.getElementById('c-notes').value = item.notes || '';
 
-            // Update Input Text & Flatpickr instances
             document.getElementById('c-upload-date').value = item.uploadDate || '';
             document.getElementById('c-take').value = item.take || '';
             document.getElementById('c-edit').value = item.edit || '';
@@ -1121,6 +1192,7 @@
             if (proj && proj.folders) { proj.folders.forEach(f => { fSel.innerHTML += `<option value="${f.id}">${f.name}</option>`; }); }
         }
 
+        // --- FIX BUG EKSPOR PDF KOSONG ---
         window.executeExportPDF = function() {
             const pId = document.getElementById('export-project-select').value;
             const fId = document.getElementById('export-folder-select').value;
@@ -1129,20 +1201,49 @@
             closeModals();
 
             const container = document.getElementById('pdf-export-container');
+            // Render elemen dengan styling standar landscape yang terbaca sempurna oleh html2pdf
             container.innerHTML = `
-                <div style="padding: 25px; font-family: sans-serif; width: 750px; background: white; color: #0f172a;">
-                    <h2 style="color: #4f46e5; margin:0;">CONTENT PLAN REPORT</h2>
-                    <p style="font-size: 12px; color: #64748b;">Project: <b>${proj.name}</b> | Periode: <b>${folder.name}</b></p>
-                    <table border="1" cellspacing="0" cellpadding="6" style="width:100%; border-collapse: collapse; font-size: 11px; margin-top: 10px;">
-                        <tr style="background: #f1f5f9;"><th>Week</th><th>Jadwal Upload</th><th>Judul</th><th>Jenis</th><th>Status</th><th>Notes</th></tr>
-                        ${(folder.items || []).map(i => `<tr><td>${i.week}</td><td>${formatDisplayDateTime(i.uploadDate)}</td><td><b>${i.title}</b></td><td>${i.type}</td><td>${i.status}</td><td>${i.notes || '-'}</td></tr>`).join('')}
+                <div style="padding: 30px; font-family: 'Plus Jakarta Sans', Arial, sans-serif; width: 800px; background: #ffffff; color: #0f172a;">
+                    <h2 style="color: #4f46e5; margin:0 0 5px 0; font-size: 22px;">CONTENT PLAN REPORT</h2>
+                    <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Project: <b>${proj.name}</b> | Periode: <b>${folder.name}</b></p>
+                    <table border="1" cellspacing="0" cellpadding="8" style="width:100%; border-collapse: collapse; font-size: 12px; border-color: #cbd5e1;">
+                        <thead>
+                            <tr style="background: #f1f5f9; color: #334155; text-align: left;">
+                                <th style="padding: 8px;">Week</th>
+                                <th style="padding: 8px;">Jadwal Upload</th>
+                                <th style="padding: 8px;">Judul Konten</th>
+                                <th style="padding: 8px;">Jenis</th>
+                                <th style="padding: 8px;">Status</th>
+                                <th style="padding: 8px;">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(folder.items || []).map(i => `
+                                <tr>
+                                    <td style="padding: 8px; font-weight: bold; color: #4f46e5;">${i.week}</td>
+                                    <td style="padding: 8px;">${formatDisplayDateTime(i.uploadDate)}</td>
+                                    <td style="padding: 8px; font-weight: bold;">${i.title}</td>
+                                    <td style="padding: 8px;">${i.type}</td>
+                                    <td style="padding: 8px;">${i.status}</td>
+                                    <td style="padding: 8px; color: #64748b;">${i.notes || '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
                     </table>
                 </div>
             `;
-            container.classList.add('hidden');
-            html2pdf().from(container).set({
-                margin: 10, filename: `Plan_${proj.name}_${folder.name}.pdf`.replace(/\s+/g,'_'), jsPDF: { orientation: 'landscape' }
-            }).save().then(() => { container.classList.add('hidden'); container.innerHTML = ''; });
+
+            const opt = {
+                margin:       10,
+                filename:     `Plan_${proj.name}_${folder.name}`.replace(/\s+/g,'_') + '.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().from(container).set(opt).save().then(() => {
+                container.innerHTML = '';
+            });
         }
 
         window.handleLogoClick = handleLogoClick; window.verifyPinAction = verifyPinAction; window.togglePinVisibility = togglePinVisibility;

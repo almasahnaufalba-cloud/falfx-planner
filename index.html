@@ -19,17 +19,25 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        /* Style untuk penanda proyek di kalender Flatpickr */
+        /* Kustomisasi Flatpickr untuk penanda inisial project */
+        .flatpickr-day.has-take-project {
+            background: #4f46e5 !important;
+            border-color: #6366f1 !important;
+            color: white !important;
+            font-weight: bold;
+            position: relative;
+        }
         .flatpickr-day.has-take-project::after {
-            content: '';
+            content: attr(data-initial);
             position: absolute;
-            bottom: 3px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 4px;
-            height: 4px;
-            background: #6366f1;
-            border-radius: 50%;
+            bottom: 2px;
+            right: 2px;
+            font-size: 8px;
+            background: #ffffff;
+            color: #0f172a;
+            padding: 1px 3px;
+            border-radius: 4px;
+            font-weight: 900;
         }
     </style>
 </head>
@@ -78,9 +86,7 @@
                     </button>
                 </div>
             </div>
-            <div id="project-list" class="space-y-3">
-                <!-- Dynamic Project List -->
-            </div>
+            <div id="project-list" class="space-y-3"></div>
         </aside>
 
         <!-- Main Content Area -->
@@ -178,27 +184,22 @@
         </main>
     </div>
 
-    <!-- Hidden PDF Export Render Container -->
-    <div id="pdf-export-container" class="hidden"></div>
+    <!-- Hidden Container untuk Ekspor PDF agar tidak kosong -->
+    <div id="pdf-export-container" style="position: absolute; left: -9999px; top: 0; background: white; color: black;"></div>
 
-    <!-- Modal: Secret Owner / Schedule, Rest Dates, Project Passwords & Calendar Indicator -->
+    <!-- Modal: Secret Owner / Schedule, Rest Dates & Project Passwords -->
     <div id="schedule-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl p-6 rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <h3 class="text-lg font-extrabold text-white mb-1">Pengaturan Privasi & Kalender Take Project Owner</h3>
-            <p class="text-xs text-slate-400 mb-5">Atur hari libur, tanggal libur khusus, lihat daftar PIN sandi project, dan pantau jadwal take project pada kalender interaktif.</p>
-            <div class="space-y-6">
-                <!-- Kalender Interaktif Privasi dengan Penanda Take Project -->
-                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">📅 Kalender Jadwal Take Project (Privasi)</label>
-                    <p class="text-[11px] text-slate-400 mb-3">Tanggal yang memiliki titik penanda ungu menunjukkan adanya jadwal take project.</p>
-                    <div class="flex justify-center">
-                        <input type="text" id="privacy-inline-calendar" class="hidden">
-                    </div>
-                    <div id="calendar-take-detail" class="mt-3 p-3 bg-slate-900 rounded-xl text-xs text-slate-300 border border-slate-800">
-                        <span class="text-slate-500 italic">Pilih tanggal pada kalender di atas untuk melihat detail proyek yang take.</span>
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg p-6 rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <h3 class="text-lg font-extrabold text-white mb-1">Pengaturan Privasi & Info Project Owner</h3>
+            <p class="text-xs text-slate-400 mb-5">Atur hari libur rutin, tanggal libur khusus, serta kalender interaktif jadwal take seluruh project.</p>
+            <div class="space-y-5">
+                <!-- Kalender Interaktif Privasi dengan Penanda Inisial Proyek -->
+                <div>
+                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">🗓️ Kalender Jadwal Take Proyek (Privasi)</label>
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex justify-center">
+                        <input type="text" id="owner-calendar-view" class="hidden">
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2.5">Hari Istirahat Rutin Mingguan</label>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -482,7 +483,6 @@
         let activeFilter = 'all';
         let isAlarmActive = false;
         let isSidebarCollapsed = false;
-        let privacyCalendarInstance = null;
 
         let defaultInitialDB = [{
             id: 'proj_1', name: 'Sedjaya Lifestyle', pin: '1234', logo: '',
@@ -501,9 +501,47 @@
         let unlockedProjects = {}; 
         let pendingPinCallback = null;
 
-        // Inisialisasi FLATPICKR
+        // Inisialisasi FLATPICKR (Kalender Pop-up Mewah)
         window.fpSpecificRest = flatpickr("#new-rest-date-input", { dateFormat: "Y-m-d", locale: "id" });
         
+        // Inisialisasi Kalender Privasi Pemilik dengan Penanda Take Project & Inisial
+        window.fpOwnerCalendar = flatpickr("#owner-calendar-view", {
+            inline: true,
+            locale: "id",
+            dateFormat: "Y-m-d",
+            onDayCreate: function(dObj, dStr, fp, dayElem) {
+                const year = dayElem.dateObj.getFullYear();
+                const month = String(dayElem.dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dayElem.dateObj.getDate()).padStart(2, '0');
+                const dateKey = `${year}-${month}-${day}`;
+
+                // Cari apakah ada jadwal take di tanggal ini beserta inisial project-nya
+                let matchingTakes = [];
+                db.forEach(proj => {
+                    const initials = proj.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                    if (proj.folders) {
+                        proj.folders.forEach(folder => {
+                            if (folder.items) {
+                                folder.items.forEach(item => {
+                                    if (item.take && item.take.startsWith(dateKey)) {
+                                        matchingTakes.push({ projId: proj.id, initial: initials });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+
+                if (matchingTakes.length > 0) {
+                    dayElem.classList.add('has-take-project');
+                    // Ambil inisial unik atau gabungan
+                    const uniqueInitials = [...new Set(matchingTakes.map(t => t.initial))].join(',');
+                    dayElem.setAttribute('data-initial', uniqueInitials);
+                    dayElem.title = `Take Project: ${matchingTakes.map(t => t.projId).join(', ')}`;
+                }
+            }
+        });
+
         window.fpTake = flatpickr("#c-take", {
             enableTime: true, dateFormat: "Y-m-d\\TH:i", locale: "id", time_24hr: true,
             onChange: function() { updateDayLabel('c-take', 'day-take-info'); autoCalculateEditingDate(); }
@@ -635,7 +673,7 @@
             const pinInput = document.getElementById('project-pin-input');
             const eyeBtn = document.getElementById('proj-pin-eye');
             if (pinInput.type === 'password') { pinInput.type = 'text'; eyeBtn.innerText = "🔒 Sembunyikan"; } 
-            else { pinInput.type = 'password'; eyeBtn.innerText = '👁️ Lihat'; }
+            else { pinInput.type = 'password'; eyeBtn.innerText = "👁️ Lihat"; }
         }
 
         function renderProjectPasswordsList() {
@@ -653,68 +691,11 @@
             });
         }
 
-        // Kumpulkan semua tanggal take dari seluruh proyek untuk indikator kalender privasi
-        function getAllTakeDatesMap() {
-            let takeMap = {}; // Format: "YYYY-MM-DD": [{projectName, title}]
-            db.forEach(proj => {
-                if (!proj.folders) return;
-                proj.folders.forEach(folder => {
-                    if (!folder.items) return;
-                    folder.items.forEach(item => {
-                        if (item.take) {
-                            let dateOnly = item.take.split('T')[0];
-                            if (!takeMap[dateOnly]) takeMap[dateOnly] = [];
-                            takeMap[dateOnly].push({ project: proj.name, title: item.title });
-                        }
-                    });
-                });
-            });
-            return takeMap;
-        }
-
         function openScheduleModal() {
             document.querySelectorAll('.rest-day-checkbox').forEach(cb => { cb.checked = restDays.includes(parseInt(cb.value)); });
             renderSpecificRestDatesList(); renderProjectPasswordsList();
             document.getElementById('schedule-modal').classList.remove('hidden');
-
-            // Inisialisasi atau update inline kalender privasi
-            const takeMap = getAllTakeDatesMap();
-            const takeDatesArray = Object.keys(takeMap);
-
-            if (privacyCalendarInstance) {
-                privacyCalendarInstance.destroy();
-            }
-
-            privacyCalendarInstance = flatpickr("#privacy-inline-calendar", {
-                inline: true,
-                locale: "id",
-                dateFormat: "Y-m-d",
-                enable: [
-                    function(date) {
-                        return true; // semua tanggal aktif
-                    }
-                ],
-                onDayCreate: function(dObj, dStr, fp, dayElem) {
-                    let yyyy = dayElem.dateObj.getFullYear();
-                    let mm = String(dayElem.dateObj.getMonth() + 1).padStart(2, '0');
-                    let dd = String(dayElem.dateObj.getDate()).padStart(2, '0');
-                    let currentFormatted = `${yyyy}-${mm}-${dd}`;
-                    
-                    if (takeMap[currentFormatted]) {
-                        dayElem.classList.add("has-take-project");
-                        dayElem.title = `Take Project: ${takeMap[currentFormatted].map(i => i.project + ' (' + i.title + ')').join(', ')}`;
-                    }
-                },
-                onChange: function(selectedDates, dateStr, instance) {
-                    const detailEl = document.getElementById('calendar-take-detail');
-                    if (takeMap[dateStr]) {
-                        let listHtml = takeMap[dateStr].map(item => `<div class="font-semibold text-indigo-300">• Project: <span class="text-white">${item.project}</span> — Konten: <span class="text-slate-200">${item.title}</span></div>`).join('');
-                        detailEl.innerHTML = `<div class="font-bold text-indigo-400 mb-1">📅 Jadwal Take pada ${dateStr}:</div>${listHtml}`;
-                    } else {
-                        detailEl.innerHTML = `<span class="text-slate-400 italic">Tidak ada jadwal take project pada tanggal ${dateStr}.</span>`;
-                    }
-                }
-            });
+            if (window.fpOwnerCalendar) window.fpOwnerCalendar.redraw();
         }
 
         window.openProjectSettingsModal = function() {
@@ -807,29 +788,33 @@
             updateDayLabel('c-edit', 'day-edit-info');
         }
 
+        // --- VALIDASI BENTROK TAKE: Bentrok dengan 1 project diizinkan, beda project bermasalah ---
         function validateTakeSchedule(takeVal, currentItemId) {
             if (!takeVal) return null;
             const takeDateObj = new Date(takeVal);
             if (isNaN(takeDateObj.getTime())) return null;
 
             const dayOfWeek = takeDateObj.getDay();
-            if (restDays.includes(dayOfWeek)) return "maaf waktu sudah terisi project lain / hari libur rutinan";
+            if (restDays.includes(dayOfWeek)) return "Maaf, waktu tersebut merupakan hari libur rutinan.";
 
             const yyyy = takeDateObj.getFullYear();
             const mm = String(takeDateObj.getMonth() + 1).padStart(2, '0');
             const dd = String(takeDateObj.getDate()).padStart(2, '0');
             const dateStrOnly = `${yyyy}-${mm}-${dd}`;
-            if (specificRestDates.includes(dateStrOnly)) return "maaf waktu sudah terisi project lain (Libur Khusus)";
+            if (specificRestDates.includes(dateStrOnly)) return "Maaf, waktu tersebut merupakan Libur Khusus.";
 
-            // Cek bentrok: Jika bentrok dengan 1 project yang sama (item yang sama saat edit), tidak masalah. 
-            // Jika bentrok dengan project/item lain, baru bermasalah.
+            // Cek bentrok antar project
             for (const proj of db) {
                 if (!proj.folders) continue;
                 for (const folder of proj.folders) {
                     if (!folder.items) continue;
                     for (const item of folder.items) {
+                        // Jika item berbeda dan jam take sama
                         if (item.id !== currentItemId && item.take && item.take === takeVal) {
-                            return "maaf waktu sudah terisi project lain (Jadwal Bentrok)";
+                            // Cek apakah ini project yang sama atau beda
+                            if (proj.id !== activeProjectId) {
+                                return `❌ Jadwal bentrok dengan project lain (${proj.name})! Bentrok dengan project lain tidak diperbolehkan.`;
+                            }
                         }
                     }
                 }
@@ -1104,7 +1089,7 @@
                 const tDate = new Date(takeVal);
                 const uDate = new Date(uploadVal);
                 if (uDate <= tDate) {
-                    alert("❌ TANGGAL GHOIB TERDETEKSI!\n\nTanggal Upload harus SETELAH Tanggal Syuting/Take. Silakan atur kembali kalendernya.");
+                    alert("❌ TANGGAL GHOIB TERDETEKSI!\n\nTanggal Upload harus SETELAH Tanggal Syuting/Take. Masa upload dulu lalu baru take? Hantu dong! 👻\n\nSilakan atur kembali kalendernya.");
                     return;
                 }
             }
@@ -1212,53 +1197,19 @@
 
             const container = document.getElementById('pdf-export-container');
             container.innerHTML = `
-                <div style="padding: 25px; font-family: 'Plus Jakarta Sans', sans-serif; width: 750px; background: #ffffff; color: #0f172a;">
-                    <h2 style="color: #4f46e5; margin:0 0 5px 0; font-size: 20px;">CONTENT PLAN REPORT</h2>
-                    <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">Project: <b>${proj.name}</b> | Periode Folder: <b>${folder.name}</b></p>
-                    <table border="1" cellspacing="0" cellpadding="6" style="width:100%; border-collapse: collapse; font-size: 11px; border-color: #cbd5e1;">
-                        <thead>
-                            <tr style="background: #f1f5f9; color: #334155;">
-                                <th style="padding: 8px;">Week</th>
-                                <th style="padding: 8px;">Jadwal Upload</th>
-                                <th style="padding: 8px;">Judul Konten</th>
-                                <th style="padding: 8px;">Jenis</th>
-                                <th style="padding: 8px;">Status</th>
-                                <th style="padding: 8px;">Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${(folder.items || []).map(i => `
-                                <tr>
-                                    <td style="padding: 6px; text-align: center;">${i.week}</td>
-                                    <td style="padding: 6px;">${formatDisplayDateTime(i.uploadDate)}</td>
-                                    <td style="padding: 6px;"><b>${i.title}</b></td>
-                                    <td style="padding: 6px; text-align: center;">${i.type}</td>
-                                    <td style="padding: 6px; text-align: center;">${i.status}</td>
-                                    <td style="padding: 6px;">${i.notes || '-'}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
+                <div style="padding: 25px; font-family: sans-serif; width: 750px; background: white; color: #0f172a;">
+                    <h2 style="color: #4f46e5; margin:0;">CONTENT PLAN REPORT</h2>
+                    <p style="font-size: 12px; color: #64748b;">Project: <b>${proj.name}</b> | Periode: <b>${folder.name}</b></p>
+                    <table border="1" cellspacing="0" cellpadding="6" style="width:100%; border-collapse: collapse; font-size: 11px; margin-top: 10px;">
+                        <tr style="background: #f1f5f9;"><th>Week</th><th>Jadwal Upload</th><th>Judul</th><th>Jenis</th><th>Status</th><th>Notes</th></tr>
+                        ${(folder.items || []).map(i => `<tr><td>${i.week}</td><td>${formatDisplayDateTime(i.uploadDate)}</td><td><b>${i.title}</b></td><td>${i.type}</td><td>${i.status}</td><td>${i.notes || '-'}</td></tr>`).join('')}
                     </table>
                 </div>
             `;
-            // Pastikan container terlihat sejenak saat html2pdf merender agar tidak kosong
-            container.classList.remove('hidden');
             
-            setTimeout(() => {
-                html2pdf().from(container).set({
-                    margin: 10, 
-                    filename: `Plan_${proj.name}_${folder.name}`.replace(/\s+/g,'_') + '.pdf', 
-                    jsPDF: { orientation: 'landscape', unit: 'mm', format: 'a4', compress: true }
-                }).save().then(() => { 
-                    container.classList.add('hidden'); 
-                    container.innerHTML = ''; 
-                }).catch(err => {
-                    console.error("PDF Export Error:", err);
-                    container.classList.add('hidden');
-                    container.innerHTML = '';
-                    alert("Gagal mengunduh PDF. Silakan coba lagi.");
-                });
-            }, 100);
+            html2pdf().from(container).set({
+                margin: 10, filename: `Plan_${proj.name}_${folder.name}.pdf`.replace(/\s+/g,'_'), jsPDF: { orientation: 'landscape' }
+            }).save().then(() => { container.innerHTML = ''; });
         }
 
         window.handleLogoClick = handleLogoClick; window.verifyPinAction = verifyPinAction; window.togglePinVisibility = togglePinVisibility;

@@ -19,8 +19,8 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        /* Kustomisasi Tanda Kalender Privasi */
-        .flatpickr-day.project-take-marked {
+        /* Kustomisasi tampilan Kalender Flatpickr untuk penanda Project */
+        .flatpickr-day.has-take-project {
             background: #4f46e5 !important;
             border-color: #6366f1 !important;
             color: white !important;
@@ -49,7 +49,8 @@
             <button onclick="toggleNotificationAlarm()" id="btn-alarm" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5">
                 <span id="btn-alarm-text">🔔 Ingatkan Upload</span>
             </button>
-            <button onclick="openExportModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center space-x-1.5">
+            <!-- Tombol Ekspor PDF (Hanya Tampil di dalam Project Aktif) -->
+            <button id="btn-export-pdf" onclick="openExportModal()" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center space-x-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 <span>Ekspor PDF</span>
             </button>
@@ -73,7 +74,9 @@
                     </button>
                 </div>
             </div>
-            <div id="project-list" class="space-y-3"></div>
+            <div id="project-list" class="space-y-3">
+                <!-- Dynamic Project List -->
+            </div>
         </aside>
 
         <!-- Main Content Area -->
@@ -85,7 +88,7 @@
                         <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                     </div>
                     <h3 class="text-xl font-bold text-white mb-2">Pilih Folder Terproteksi FALFX</h3>
-                    <p class="text-xs text-slate-400 mb-6 leading-relaxed">Klik salah satu Project dan Folder di sidebar, lalu masukkan sandi PIN untuk membuka isi tabel konten.</p>
+                    <p class="text-xs text-slate-400 mb-6 leading-relaxed">Klik salah satu Project dan Folder di sidebar, lalu masukkan sandi PIN untuk membuka isi tabel konten. Pindah Project akan langsung mengunci project sebelumnya.</p>
                     <button onclick="openProjectModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-5 py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">+ Buat Project Baru</button>
                 </div>
             </div>
@@ -100,7 +103,7 @@
                                 <span id="bc-project-name">Project Name</span>
                                 <span>/</span>
                                 <span id="bc-folder-name" class="text-slate-300">Plan Folder</span>
-                                <button onclick="openProjectSettingsModal()" class="ml-2 text-slate-400 hover:text-indigo-400 text-xs flex items-center space-x-1 bg-slate-800/80 px-2 py-0.5 rounded-lg border border-slate-700/80 transition" title="Pengaturan Project">
+                                <button onclick="openProjectSettingsModal()" class="ml-2 text-slate-400 hover:text-indigo-400 text-xs flex items-center space-x-1 bg-slate-800/80 px-2 py-0.5 rounded-lg border border-slate-700/80 transition" title="Pengaturan Project (Ganti Logo, Nama & Sandi)">
                                     ⚙️ <span class="hidden sm:inline">Project Setting</span>
                                 </button>
                             </div>
@@ -171,24 +174,15 @@
         </main>
     </div>
 
-    <!-- Hidden Container untuk PDF Export -->
+    <!-- Hidden Export Container -->
     <div id="pdf-export-container" class="hidden"></div>
 
     <!-- Modal: Secret Owner / Schedule, Rest Dates & Project Passwords -->
     <div id="schedule-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-xl p-6 rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <h3 class="text-lg font-extrabold text-white mb-1">Pengaturan Privasi & Kalender Jadwal Take</h3>
-            <p class="text-xs text-slate-400 mb-5">Atur hari libur, tanggal libur khusus, kalender penanda take project, serta daftar sandi PIN.</p>
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg p-6 rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <h3 class="text-lg font-extrabold text-white mb-1">Pengaturan Privasi & Info Project Owner</h3>
+            <p class="text-xs text-slate-400 mb-5">Atur hari libur rutin, tanggal libur khusus, serta daftar PIN sandi seluruh project.</p>
             <div class="space-y-5">
-                <!-- Kalender Interaktif Penanda Take Project -->
-                <div>
-                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">📅 Kalender Penanda Tanggal Take Proyek</label>
-                    <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex justify-center">
-                        <input type="text" id="owner-calendar-picker" class="hidden">
-                    </div>
-                    <p class="text-[10px] text-slate-400 mt-1.5 italic">*Tanggal yang memiliki jadwal take ditandai khusus dengan warna dan inisial project.</p>
-                </div>
-
                 <div>
                     <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2.5">Hari Istirahat Rutin Mingguan</label>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -224,7 +218,7 @@
                     <div id="rest-dates-list" class="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-slate-800"></div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">🔑 Daftar Sandi PIN Project</label>
+                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">🔑 Daftar Sandi PIN Project (Privasiku)</label>
                     <div id="project-passwords-list" class="space-y-2 max-h-40 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-slate-800 custom-scrollbar"></div>
                 </div>
                 <div class="flex justify-end space-x-2 pt-4 border-t border-slate-800">
@@ -426,20 +420,10 @@
     <div id="export-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-md p-6 rounded-3xl shadow-2xl">
             <h3 class="text-lg font-extrabold text-white mb-2">Ekspor PDF Laporan Klien</h3>
-            <p class="text-xs text-slate-400 mb-4">Ekspor tabel folder dari Project yang sedang dimasuki saat ini.</p>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Project Aktif</label>
-                    <input type="text" id="export-project-display" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-indigo-400 font-bold focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Pilih Folder Plan</label>
-                    <select id="export-folder-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"></select>
-                </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="closeModals()" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white">Batal</button>
-                    <button type="button" onclick="executeExportPDF()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-lg">Download PDF</button>
-                </div>
+            <p id="export-modal-desc" class="text-xs text-slate-400 mb-4">Mengekspor folder plan aktif di project ini.</p>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button type="button" onclick="closeModals()" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white">Batal</button>
+                <button type="button" onclick="executeExportPDF()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-lg">Download PDF</button>
             </div>
         </div>
     </div>
@@ -490,48 +474,60 @@
         let unlockedProjects = {}; 
         let pendingPinCallback = null;
 
-        // Inisialisasi FLATPICKR
-        window.fpSpecificRest = flatpickr("#new-rest-date-input", { dateFormat: "Y-m-d", locale: "id" });
-        
-        window.fpOwnerCalendar = flatpickr("#owner-calendar-picker", {
-            inline: true,
-            dateFormat: "Y-m-d",
-            locale: "id",
-            onDayCreate: function(dObj, dStr, fp, dayElem) {
-                const dateString = fp.formatDate(dObj, "Y-m-d");
-                // Cari apakah ada jadwal take di tanggal ini beserta inisial projectnya
-                for (const proj of db) {
-                    if (!proj.folders) continue;
-                    for (const folder of proj.folders) {
-                        if (!folder.items) continue;
-                        for (const item of folder.items) {
-                            if (item.take && item.take.startsWith(dateString)) {
-                                const initials = proj.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-                                dayElem.classList.add('project-take-marked');
-                                dayElem.title = `Take: ${item.title} (${proj.name})`;
-                                
-                                // Tambahkan label inisial kecil jika belum ada
-                                if (!dayElem.querySelector('.proj-initial')) {
-                                    const badge = document.createElement('span');
-                                    badge.className = 'proj-initial absolute bottom-0 right-0 bg-amber-400 text-slate-950 text-[9px] font-black px-1 rounded';
-                                    badge.innerText = initials;
-                                    dayElem.style.position = 'relative';
-                                    dayElem.appendChild(badge);
+        // Inisialisasi Flatpickr dengan fungsi penanda hari Take project (inisial project)
+        function getTakeProjectInitialsMap() {
+            const map = {};
+            db.forEach(proj => {
+                const initial = (proj.name.replace(/[^a-zA-Z]/g, '')).substring(0, 2).toUpperCase() || 'P';
+                if (proj.folders) {
+                    proj.folders.forEach(f => {
+                        if (f.items) {
+                            f.items.forEach(item => {
+                                if (item.take) {
+                                    const dateOnly = item.take.split('T')[0];
+                                    if (!map[dateOnly]) map[dateOnly] = [];
+                                    map[dateOnly].push({ projId: proj.id, name: proj.name, initial: initial });
                                 }
-                            }
+                            });
                         }
-                    }
+                    });
+                }
+            });
+            return map;
+        }
+
+        const flatpickrConfig = {
+            enableTime: true, dateFormat: "Y-m-d\\TH:i", locale: "id", time_24hr: true,
+            onDayCreate: function(dObj, dStr, fp, dayElem) {
+                const yyyy = dayElem.dateObj.getFullYear();
+                const mm = String(dayElem.dateObj.getMonth() + 1).padStart(2, '0');
+                const dd = String(dayElem.dateObj.getDate()).padStart(2, '0');
+                const dateKey = `${yyyy}-${mm}-${dd}`;
+                
+                const takeMap = getTakeProjectInitialsMap();
+                if (takeMap[dateKey]) {
+                    dayElem.classList.add('has-take-project');
+                    const initials = takeMap[dateKey].map(x => x.initial).join(',');
+                    const tooltipText = takeMap[dateKey].map(x => x.name).join(', ');
+                    dayElem.setAttribute('title', `Take Proyek: ${tooltipText}`);
+                    
+                    const badge = document.createElement('span');
+                    badge.className = 'absolute bottom-0 right-0 bg-indigo-900 text-indigo-200 text-[9px] font-bold px-1 rounded-tl';
+                    badge.innerText = initials;
+                    dayElem.style.position = 'relative';
+                    dayElem.appendChild(badge);
                 }
             }
-        });
+        };
 
+        window.fpSpecificRest = flatpickr("#new-rest-date-input", { dateFormat: "Y-m-d", locale: "id" });
         window.fpTake = flatpickr("#c-take", {
-            enableTime: true, dateFormat: "Y-m-d\\TH:i", locale: "id", time_24hr: true,
+            ...flatpickrConfig,
             onChange: function() { updateDayLabel('c-take', 'day-take-info'); autoCalculateEditingDate(); }
         });
 
         window.fpUpload = flatpickr("#c-upload-date", {
-            enableTime: true, dateFormat: "Y-m-d\\TH:i", locale: "id", time_24hr: true,
+            ...flatpickrConfig,
             onChange: function() { updateDayLabel('c-upload-date', 'day-upload-info'); }
         });
 
@@ -677,7 +673,6 @@
         function openScheduleModal() {
             document.querySelectorAll('.rest-day-checkbox').forEach(cb => { cb.checked = restDays.includes(parseInt(cb.value)); });
             renderSpecificRestDatesList(); renderProjectPasswordsList();
-            if (window.fpOwnerCalendar) window.fpOwnerCalendar.redraw();
             document.getElementById('schedule-modal').classList.remove('hidden');
         }
 
@@ -771,30 +766,36 @@
             updateDayLabel('c-edit', 'day-edit-info');
         }
 
+        // --- VALIDASI BENTROK TAKE (Hanya bermasalah jika bentrok dengan project lain) ---
         function validateTakeSchedule(takeVal, currentItemId) {
             if (!takeVal) return null;
             const takeDateObj = new Date(takeVal);
             if (isNaN(takeDateObj.getTime())) return null;
 
             const dayOfWeek = takeDateObj.getDay();
-            if (restDays.includes(dayOfWeek)) return "maaf waktu sudah terisi project lain / hari libur rutinan";
+            if (restDays.includes(dayOfWeek)) return "Maaf, hari tersebut adalah jadwal istirahat rutin mingguan!";
 
             const yyyy = takeDateObj.getFullYear();
             const mm = String(takeDateObj.getMonth() + 1).padStart(2, '0');
             const dd = String(takeDateObj.getDate()).padStart(2, '0');
             const dateStrOnly = `${yyyy}-${mm}-${dd}`;
-            if (specificRestDates.includes(dateStrOnly)) return "maaf waktu sudah terisi project lain (Libur Khusus)";
+            if (specificRestDates.includes(dateStrOnly)) return "Maaf, tanggal tersebut merupakan hari libur khusus!";
 
-            // Aturan Bentrok: Jika bentrok dengan 1 project yang sama (item sendiri atau project yang sama) tidak masalah. Baru bermasalah jika dengan project lain.
             for (const proj of db) {
                 if (!proj.folders) continue;
                 for (const folder of proj.folders) {
                     if (!folder.items) continue;
                     for (const item of folder.items) {
-                        if (item.id !== currentItemId && item.take && item.take === takeVal) {
-                            // Cek apakah item ini berasal dari project yang berbeda
+                        // Jika ID sama (sedang mengedit item miliknya sendiri), abaikan bentrok
+                        if (item.id === currentItemId) continue;
+                        
+                        if (item.take && item.take === takeVal) {
+                            // Cek apakah item ini berada di project yang sama atau project lain
                             if (proj.id !== activeProjectId) {
-                                return "maaf waktu sudah terisi project lain (Jadwal Bentrok dengan Project Lain)";
+                                return `❌ Jadwal Bentrok! Waktu take tersebut sudah terisi oleh project lain (${proj.name}).`;
+                            } else {
+                                // Jika bentrok dengan 1 project yang sama, diizinkan (tidak masalah)
+                                return null;
                             }
                         }
                     }
@@ -898,11 +899,21 @@
 
         function updateHeaderButtonState() {
             const btnText = document.getElementById('header-btn-text');
+            const btnExportPdf = document.getElementById('btn-export-pdf');
             if (!btnText) return;
+
             if (activeProjectId && unlockedProjects[activeProjectId]) {
-                if (activeFolderId) btnText.innerText = "+ Tambah Konten";
-                else btnText.innerText = "+ Tambah Folder Plan";
-            } else { btnText.innerText = "+ Project Baru"; }
+                if (activeFolderId) {
+                    btnText.innerText = "+ Tambah Konten";
+                    if (btnExportPdf) btnExportPdf.classList.remove('hidden'); // Tampilkan tombol ekspor PDF hanya saat di dalam project & folder aktif
+                } else {
+                    btnText.innerText = "+ Tambah Folder Plan";
+                    if (btnExportPdf) btnExportPdf.classList.add('hidden');
+                }
+            } else { 
+                btnText.innerText = "+ Project Baru"; 
+                if (btnExportPdf) btnExportPdf.classList.add('hidden');
+            }
         }
 
         window.handleHeaderAction = function() {
@@ -937,9 +948,11 @@
             const noSel = document.getElementById('no-selection');
             const wsContent = document.getElementById('workspace-content');
             
-            if (!project || !unlockedProjects[project.id] || !folder) { noSel.classList.remove('hidden'); wsContent.classList.add('hidden'); return; }
+            if (!project || !unlockedProjects[project.id] || !folder) { noSel.classList.remove('hidden'); wsContent.classList.add('hidden'); updateHeaderButtonState(); return; }
 
             noSel.classList.add('hidden'); wsContent.classList.remove('hidden');
+            updateHeaderButtonState();
+
             const logoContainer = document.getElementById('project-logo-display');
             if (project.logo) logoContainer.innerHTML = `<img src="${project.logo}" class="w-full h-full object-cover">`;
             else logoContainer.innerHTML = `<span class="text-xl font-black text-indigo-400">${project.name.charAt(0)}</span>`;
@@ -1070,7 +1083,7 @@
                 const tDate = new Date(takeVal);
                 const uDate = new Date(uploadVal);
                 if (uDate <= tDate) {
-                    alert("❌ TANGGAL GHOIB TERDETEKSI!\n\nTanggal Upload harus SETELAH Tanggal Syuting/Take.");
+                    alert("❌ TANGGAL GHOIB TERDETEKSI!\n\nTanggal Upload harus SETELAH Tanggal Syuting/Take. Masa upload dulu baru take? Hantu dong! 👻\n\nSilakan atur kembali kalendernya.");
                     return;
                 }
             }
@@ -1154,49 +1167,72 @@
             saveDB(); renderSidebar(); renderWorkspace(); updateHeaderButtonState();
         }
 
-        // Tombol ekspor PDF hanya aktif jika berada di dalam project
+        // --- EKSPOR PDF KHUSUS FOLDER DALAM PROJECT AKTIF ---
         window.openExportModal = function() {
             const { project, folder } = getActiveProjectAndFolder();
             if (!project || !folder) {
-                alert("⚠️ Anda harus masuk (buka project & folder) terlebih dahulu untuk mengekspor PDF tabel dari project aktif.");
+                alert("Silakan buka dan masuk ke dalam Project serta Folder Plan yang ingin diexport terlebih dahulu!");
                 return;
             }
-            document.getElementById('export-project-display').value = project.name;
-            const fSel = document.getElementById('export-folder-select'); fSel.innerHTML = '';
-            if (project.folders) {
-                project.folders.forEach(f => {
-                    const isSelected = f.id === activeFolderId ? 'selected' : '';
-                    fSel.innerHTML += `<option value="${f.id}" ${isSelected}>${f.name}</option>`;
-                });
-            }
+            document.getElementById('export-modal-desc').innerText = `Mengekspor folder plan [${folder.name}] dari project [${project.name}].`;
             document.getElementById('export-modal').classList.remove('hidden');
         }
 
         window.executeExportPDF = function() {
-            const { project } = getActiveProjectAndFolder();
-            if (!project) return;
-            const fId = document.getElementById('export-folder-select').value;
-            const folder = (project.folders || []).find(f => f.id === fId); 
-            if (!folder) return;
+            const { project, folder } = getActiveProjectAndFolder();
+            if (!project || !folder) return;
             closeModals();
 
             const container = document.getElementById('pdf-export-container');
+            // Menyiapkan elemen HTML lengkap agar terender sempurna pada PDF tanpa kosong
             container.innerHTML = `
-                <div style="padding: 25px; font-family: sans-serif; width: 750px; background: white; color: #0f172a;">
-                    <h2 style="color: #4f46e5; margin:0;">CONTENT PLAN REPORT</h2>
-                    <p style="font-size: 12px; color: #64748b;">Project: <b>${project.name}</b> | Folder: <b>${folder.name}</b></p>
-                    <table border="1" cellspacing="0" cellpadding="6" style="width:100%; border-collapse: collapse; font-size: 11px; margin-top: 10px;">
-                        <tr style="background: #f1f5f9;"><th>Week</th><th>Jadwal Upload</th><th>Judul Konten</th><th>Jenis</th><th>Status</th><th>Link & Notes</th></tr>
-                        ${(folder.items || []).map(i => `<tr><td>${i.week}</td><td>${formatDisplayDateTime(i.uploadDate)}</td><td><b>${i.title}</b></td><td>${i.type}</td><td>${i.status}</td><td>${i.ref \vert{}\vert{} ''} <br>${i.notes || '-'}</td></tr>`).join('')}
+                <div style="padding: 30px; font-family: 'Plus Jakarta Sans', Arial, sans-serif; width: 800px; background: #ffffff; color: #0f172a;">
+                    <h2 style="color: #4f46e5; margin: 0 0 5px 0; font-size: 22px;">CONTENT PLANNER FALFX REPORT</h2>
+                    <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Project: <b>${project.name}</b> | Folder Plan: <b>${folder.name}</b></p>
+                    <table border="1" cellspacing="0" cellpadding="8" style="width: 100%; border-collapse: collapse; font-size: 11px; border-color: #cbd5e1;">
+                        <thead>
+                            <tr style="background: #f1f5f9; color: #334155; text-align: left;">
+                                <th style="padding: 8px;">Week</th>
+                                <th style="padding: 8px;">Jadwal Upload</th>
+                                <th style="padding: 8px;">Nama Konten</th>
+                                <th style="padding: 8px;">Jenis</th>
+                                <th style="padding: 8px;">Take / Edit Schedule</th>
+                                <th style="padding: 8px;">Status</th>
+                                <th style="padding: 8px;">Link & Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(folder.items && folder.items.length > 0) ? folder.items.map(i => `
+                                <tr>
+                                    <td style="padding: 8px; font-weight: bold; color: #4f46e5;">${i.week}</td>
+                                    <td style="padding: 8px;">${formatDisplayDateTime(i.uploadDate)}</td>
+                                    <td style="padding: 8px; font-weight: bold;">${i.title}</td>
+                                    <td style="padding: 8px;">${i.type}</td>
+                                    <td style="padding: 8px; font-size: 10px;">Take: ${formatDisplayDateTime(i.take)}<br>Edit:${formatDisplayDateTime(i.edit)}</td>
+                                    <td style="padding: 8px;"><b>${i.status}</b></td>
+                                    <td style="padding: 8px; font-size: 10px;">
+                                        ${i.ref ? `<a href="${i.ref}" style="color: #4f46e5;">Link: ${i.ref}</a><br>` : ''}
+                                        <span>${i.notes || '-'}</span>
+                                    </td>
+                                </tr>
+                            `).join('') : `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b;">Tidak ada konten di folder ini.</td></tr>`}
+                        </tbody>
                     </table>
+                    <p style="font-size: 10px; color: #94a3b8; margin-top: 20px; text-align: right;">Dicetak otomatis melalui sistem Content Planner FALFX Pro v3.3</p>
                 </div>
             `;
-            container.classList.remove('hidden');
             
+            container.classList.remove('hidden');
+
             setTimeout(() => {
                 html2pdf().from(container).set({
-                    margin: 10, filename: `Plan_${project.name}_${folder.name}.pdf`.replace(/\s+/g,'_'), jsPDF: { orientation: 'landscape' }
-                }).save().then(() => { container.classList.add('hidden'); container.innerHTML = ''; });
+                    margin: 10, 
+                    filename: `Plan_${project.name}_${folder.name}`.replace(/\s+/g,'_') + '.pdf', 
+                    jsPDF: { orientation: 'landscape', format: 'a4', unit: 'mm' }
+                }).save().then(() => { 
+                    container.classList.add('hidden'); 
+                    container.innerHTML = ''; 
+                });
             }, 300);
         }
 

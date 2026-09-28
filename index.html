@@ -27,7 +27,7 @@
             <div>
                 <div class="flex items-center space-x-2">
                     <h1 class="text-xl font-black tracking-tight text-white">Content Planner <span class="text-indigo-400">FALFX</span></h1>
-                    <span class="bg-indigo-500/10 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/20 uppercase tracking-wider">Pro v3.0</span>
+                    <span class="bg-indigo-500/10 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/20 uppercase tracking-wider">Pro v3.1</span>
                 </div>
                 <p class="text-xs text-slate-400">Smart Scheduling, Secure Folder Access & Realtime Sync</p>
             </div>
@@ -93,6 +93,9 @@
                                 <span id="bc-project-name">Project Name</span>
                                 <span>/</span>
                                 <span id="bc-folder-name" class="text-slate-300">Plan Folder</span>
+                                <button onclick="openProjectSettingsModal()" class="ml-2 text-slate-400 hover:text-indigo-400 text-xs flex items-center space-x-1 bg-slate-800/80 px-2 py-0.5 rounded-lg border border-slate-700/80 transition" title="Pengaturan Project (Ganti Logo, Nama & Sandi)">
+                                    ⚙️ <span class="hidden sm:inline">Project Setting</span>
+                                </button>
                             </div>
                             <h2 id="workspace-title" class="text-2xl font-black text-white tracking-tight">Detail Content Plan</h2>
                         </div>
@@ -144,7 +147,7 @@
                             <thead>
                                 <tr class="bg-slate-800/60 text-slate-400 text-[11px] uppercase tracking-wider border-b border-slate-800">
                                     <th class="py-3.5 px-4 font-bold">Week</th>
-                                    <th class="py-3.5 px-4 font-bold">Jadwal Upload</th>
+                                    <th class="py-3.5 px-4 font-bold">Jadwal Upload (Hari & Waktu)</th>
                                     <th class="py-3.5 px-4 font-bold">Nama Konten</th>
                                     <th class="py-3.5 px-4 font-bold">Jenis Konten</th>
                                     <th class="py-3.5 px-4 font-bold">Take / Edit</th>
@@ -164,7 +167,7 @@
     <!-- Hidden PDF Template Container -->
     <div id="pdf-export-container" class="hidden"></div>
 
-    <!-- Modal: Secret Owner / Schedule, Rest Dates & Project Passwords -->
+    <!-- Modal: Secret Owner / Schedule, Rest Dates & Project Passwords (Privasiku) -->
     <div id="schedule-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-lg p-6 rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
             <h3 class="text-lg font-extrabold text-white mb-1">Pengaturan Privasi & Info Project Owner</h3>
@@ -212,10 +215,10 @@
                     </div>
                 </div>
 
-                <!-- Section 3: Daftar Sandi / PIN Project (Fitur Baru) -->
+                <!-- Section 3: Daftar Sandi / PIN Project (Fitur Privasiku Auto Update) -->
                 <div>
-                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">🔑 Daftar Sandi PIN Project</label>
-                    <p class="text-[11px] text-slate-400 mb-2">Daftar sandi PIN akses yang tersimpan otomatis untuk setiap project:</p>
+                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">🔑 Daftar Sandi PIN Project (Privasiku)</label>
+                    <p class="text-[11px] text-slate-400 mb-2">Daftar PIN sandi terkini seluruh project (otomatis ter-update jika diperbarui):</p>
                     <div id="project-passwords-list" class="space-y-2 max-h-40 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-slate-800 custom-scrollbar">
                         <!-- Dynamic project passwords will be rendered here -->
                     </div>
@@ -226,6 +229,56 @@
                     <button type="button" onclick="saveRestDaysSettings()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-lg">Simpan Pengaturan</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal: Project Settings (Fitur Ubah Logo, Nama, Sandi) -->
+    <div id="project-settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md p-6 rounded-3xl shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-extrabold text-white flex items-center space-x-2">
+                    <span>⚙️ Pengaturan Project</span>
+                </h3>
+                <button type="button" onclick="closeModals()" class="text-slate-400 hover:text-white font-bold text-xs">✕ Tutup</button>
+            </div>
+            <form onsubmit="handleSaveProjectSettings(event)" class="space-y-4">
+                
+                <!-- Display Logo & File Picker -->
+                <div class="flex items-center space-x-4 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+                    <div id="ps-logo-preview" class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-inner"></div>
+                    <div class="flex-1 overflow-hidden">
+                        <label class="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-1">Ganti Logo Project</label>
+                        <input type="file" id="ps-logo-input" accept="image/*" class="w-full text-[11px] text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-slate-800 file:text-indigo-400 cursor-pointer">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Nama Project</label>
+                    <input type="text" id="ps-name-input" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Sandi / PIN Baru Project</label>
+                    <div class="relative">
+                        <input type="password" id="ps-new-pin-input" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <button type="button" onclick="togglePsPinVisibility('ps-new-pin-input', 'ps-new-pin-eye')" id="ps-new-pin-eye" class="absolute right-3.5 top-2.5 text-slate-400 hover:text-white text-xs font-semibold">👁️ Lihat</button>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-800/80 pt-3 mt-2">
+                    <label class="block text-xs font-bold text-amber-400 mb-1">🔒 Syarat Verifikasi Sandi Saat Ini</label>
+                    <p class="text-[11px] text-slate-400 mb-2">Masukkan sandi project lama untuk mengonfirmasi perubahan.</p>
+                    <div class="relative">
+                        <input type="password" id="ps-current-pin-input" required placeholder="Masukkan Sandi Lama" class="w-full bg-slate-950 border border-amber-500/40 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                        <button type="button" onclick="togglePsPinVisibility('ps-current-pin-input', 'ps-curr-pin-eye')" id="ps-curr-pin-eye" class="absolute right-3.5 top-2.5 text-slate-400 hover:text-white text-xs font-semibold">👁️ Lihat</button>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModals()" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white">Batal</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-lg">Simpan Perubahan</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -330,7 +383,8 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1.5">Jadwal Upload</label>
-                        <input type="datetime-local" id="c-upload-date" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <input type="datetime-local" id="c-upload-date" required oninput="updateDayLabel('c-upload-date', 'day-upload-info')" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <span id="day-upload-info" class="text-[10px] text-indigo-400 font-bold block mt-1"></span>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1.5">Status</label>
@@ -348,11 +402,13 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1.5">Waktu Take / Syuting</label>
-                        <input type="datetime-local" id="c-take" onchange="autoCalculateEditingDate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <input type="datetime-local" id="c-take" onchange="autoCalculateEditingDate()" oninput="updateDayLabel('c-take', 'day-take-info')" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <span id="day-take-info" class="text-[10px] text-indigo-400 font-bold block mt-1"></span>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1.5">Waktu Edit (+1 Hari Otomatis)</label>
-                        <input type="date" id="c-edit" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <input type="date" id="c-edit" oninput="updateDayLabel('c-edit', 'day-edit-info')" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <span id="day-edit-info" class="text-[10px] text-indigo-400 font-bold block mt-1"></span>
                     </div>
                 </div>
                 <div>
@@ -488,6 +544,28 @@
             updateHeaderButtonState();
         });
 
+        // Helper untuk Menampilkan Live Hari saat Mengisi Input Tanggal
+        window.updateDayLabel = function(inputId, labelId) {
+            const inputVal = document.getElementById(inputId).value;
+            const labelEl = document.getElementById(labelId);
+            if (!labelEl) return;
+            if (!inputVal) {
+                labelEl.innerText = '';
+                return;
+            }
+            try {
+                const d = new Date(inputVal);
+                if (isNaN(d.getTime())) {
+                    labelEl.innerText = '';
+                    return;
+                }
+                const dayName = d.toLocaleDateString('id-ID', { weekday: 'long' });
+                labelEl.innerText = `📅 Hari: ${dayName}`;
+            } catch(e) {
+                labelEl.innerText = '';
+            }
+        }
+
         // Fitur Toggle Tombol Alarm (Ingatkan Upload / Nonaktifkan Notifikasi)
         window.toggleNotificationAlarm = function() {
             if (!("Notification" in window)) { 
@@ -552,7 +630,7 @@
             } else if (clickCount >= 3) {
                 clearTimeout(clickTimer);
                 clickCount = 0;
-                openPinPrompt("Akses Pengaturan Owner (Privasi)", ownerPinCode, () => {
+                openPinPrompt("Akses Pengaturan Owner (Privasiku)", ownerPinCode, () => {
                     openScheduleModal();
                 });
             }
@@ -607,7 +685,7 @@
             }
         }
 
-        // Fungsi Render Daftar Sandi Project di Modal Privasi
+        // Render Sandi PIN Project di Privasiku (Selalu Sinkron dengan Database Terbaru)
         function renderProjectPasswordsList() {
             const container = document.getElementById('project-passwords-list');
             if (!container) return;
@@ -640,6 +718,83 @@
             renderSpecificRestDatesList();
             renderProjectPasswordsList();
             document.getElementById('schedule-modal').classList.remove('hidden');
+        }
+
+        // Fitur Project Settings: Membuka Modal Pengaturan Project
+        window.openProjectSettingsModal = function() {
+            const { project } = getActiveProjectAndFolder();
+            if (!project) return alert("Pilih Project terlebih dahulu!");
+
+            document.getElementById('ps-name-input').value = project.name;
+            document.getElementById('ps-new-pin-input').value = project.pin;
+            document.getElementById('ps-current-pin-input').value = '';
+            document.getElementById('ps-logo-input').value = '';
+
+            const previewLogo = document.getElementById('ps-logo-preview');
+            if (project.logo) {
+                previewLogo.innerHTML = `<img src="${project.logo}" class="w-full h-full object-cover">`;
+            } else {
+                previewLogo.innerHTML = `<span class="text-lg font-black text-indigo-400">${project.name.charAt(0)}</span>`;
+            }
+
+            document.getElementById('project-settings-modal').classList.remove('hidden');
+        }
+
+        window.togglePsPinVisibility = function(inputId, eyeBtnId) {
+            const input = document.getElementById(inputId);
+            const eye = document.getElementById(eyeBtnId);
+            if (!input || !eye) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                eye.innerText = '🔒 Sembunyikan';
+            } else {
+                input.type = 'password';
+                eye.innerText = '👁️ Lihat';
+            }
+        }
+
+        // Menyimpan Perubahan Project Settings (Memeriksa Sandi Lama Terlebih Dahulu)
+        window.handleSaveProjectSettings = function(e) {
+            e.preventDefault();
+            const { project } = getActiveProjectAndFolder();
+            if (!project) return;
+
+            const currentPinInput = document.getElementById('ps-current-pin-input').value.trim();
+            if (currentPinInput !== project.pin) {
+                alert("❌ Sandi lama tidak sesuai! Verifikasi gagal.");
+                return;
+            }
+
+            const newName = document.getElementById('ps-name-input').value.trim();
+            const newPin = document.getElementById('ps-new-pin-input').value.trim();
+            const logoFile = document.getElementById('ps-logo-input').files[0];
+
+            if (!newName || !newPin) {
+                alert("Nama project dan Sandi baru tidak boleh kosong!");
+                return;
+            }
+
+            const applySettings = (logoData) => {
+                project.name = newName;
+                project.pin = newPin;
+                if (logoData !== null) {
+                    project.logo = logoData;
+                }
+                saveDB();
+                closeModals();
+                renderSidebar();
+                renderWorkspace();
+                updateHeaderButtonState();
+                alert("✅ Pengaturan Project berhasil diperbarui!");
+            };
+
+            if (logoFile) {
+                const reader = new FileReader();
+                reader.onload = (evt) => applySettings(evt.target.result);
+                reader.readAsDataURL(logoFile);
+            } else {
+                applySettings(null); 
+            }
         }
 
         window.addSpecificRestDate = function() {
@@ -694,6 +849,7 @@
             const mm = String(editDate.getMonth() + 1).padStart(2, '0');
             const dd = String(editDate.getDate()).padStart(2, '0');
             document.getElementById('c-edit').value = `${yyyy}-${mm}-${dd}`;
+            updateDayLabel('c-edit', 'day-edit-info');
         }
 
         function validateTakeSchedule(takeVal, currentItemId) {
@@ -764,7 +920,6 @@
                 const isUnlocked = unlockedProjects[project.id];
 
                 if (isSidebarCollapsed) {
-                    // Tampilan Minimalis saat sidebar diperkecil (Hanya Logo & Folder)
                     projDiv.className = 'flex flex-col items-center space-y-2 py-2 bg-slate-950/40 rounded-xl border border-slate-800/80';
                     projDiv.innerHTML = `
                         <div class="cursor-pointer" onclick="handleProjectClick('${project.id}')" title="${project.name}">
@@ -783,7 +938,6 @@
                         });
                     }
                 } else {
-                    // Tampilan Normal Sidebar
                     projDiv.innerHTML = `
                         <div class="flex items-center justify-between cursor-pointer" onclick="handleProjectClick('${project.id}')">
                             <div class="flex items-center space-x-2.5 truncate">
@@ -904,12 +1058,25 @@
             return { project, folder };
         }
 
+        // Format Tanggal Lengkap dengan Nama Hari
         function formatDisplayDateTime(dtStr) {
             if (!dtStr) return '-';
             try {
                 const d = new Date(dtStr);
                 if (isNaN(d.getTime())) return dtStr;
-                return d.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB';
+                const hasTime = dtStr.includes('T');
+                const options = {
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                };
+                if (hasTime) {
+                    options.hour = '2-digit';
+                    options.minute = '2-digit';
+                }
+                const formatted = d.toLocaleDateString('id-ID', options);
+                return hasTime ? `${formatted} WIB` : formatted;
             } catch(e) { return dtStr; }
         }
 
@@ -969,10 +1136,10 @@
 
                 tr.innerHTML = `
                     <td class="py-3.5 px-4 font-black ${isDone ? 'text-emerald-400' : 'text-indigo-400'}">${item.week}</td>
-                    <td class="py-3.5 px-4 text-xs font-medium">${formatDisplayDateTime(item.uploadDate)}</td>
+                    <td class="py-3.5 px-4 text-xs font-semibold text-slate-200">${formatDisplayDateTime(item.uploadDate)}</td>
                     <td class="py-3.5 px-4 font-bold ${isDone ? 'text-emerald-300 line-through' : 'text-white'}">${item.title}</td>
                     <td class="py-3.5 px-4 text-xs font-medium">${item.type}</td>
-                    <td class="py-3.5 px-4 text-xs text-slate-400">Take: ${formatDisplayDateTime(item.take)}<br>Edit: ${item.edit || '-'}</td>
+                    <td class="py-3.5 px-4 text-xs text-slate-400">Take: ${formatDisplayDateTime(item.take)}<br>Edit: ${formatDisplayDateTime(item.edit)}</td>
                     <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold border ${isDone ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-slate-800 text-slate-300 border-slate-700'}">${item.status}</span></td>
                     <td class="py-3.5 px-4 text-xs max-w-xs truncate text-slate-400">
                         ${item.ref ? `<a href="${item.ref}" target="_blank" class="text-indigo-400 underline block truncate">🔗 ${item.ref}</a>` : ''}
@@ -1011,6 +1178,11 @@
                 document.getElementById('c-edit').value = '';
                 document.getElementById('c-ref').value = '';
                 document.getElementById('c-notes').value = '';
+                
+                ['day-upload-info', 'day-take-info', 'day-edit-info'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = '';
+                });
             }
             document.getElementById('content-modal').classList.remove('hidden');
         }
@@ -1130,6 +1302,10 @@
             document.getElementById('c-ref').value = item.ref || '';
             document.getElementById('c-notes').value = item.notes || '';
 
+            updateDayLabel('c-upload-date', 'day-upload-info');
+            updateDayLabel('c-take', 'day-take-info');
+            updateDayLabel('c-edit', 'day-edit-info');
+
             document.getElementById('content-modal-title').innerText = "Edit Konten";
             openContentModal(true);
         }
@@ -1197,7 +1373,7 @@
                     <h2 style="color: #4f46e5; margin:0;">CONTENT PLAN REPORT</h2>
                     <p style="font-size: 12px; color: #64748b;">Project: <b>${proj.name}</b> | Periode: <b>${folder.name}</b></p>
                     <table border="1" cellspacing="0" cellpadding="6" style="width:100%; border-collapse: collapse; font-size: 11px; margin-top: 10px;">
-                        <tr style="background: #f1f5f9;"><th>Week</th><th>Jadwal</th><th>Judul</th><th>Jenis</th><th>Status</th><th>Notes</th></tr>
+                        <tr style="background: #f1f5f9;"><th>Week</th><th>Jadwal Upload</th><th>Judul</th><th>Jenis</th><th>Status</th><th>Notes</th></tr>
                         ${(folder.items || []).map(i => `<tr><td>${i.week}</td><td>${formatDisplayDateTime(i.uploadDate)}</td><td><b>${i.title}</b></td><td>${i.type}</td><td>${i.status}</td><td>${i.notes || '-'}</td></tr>`).join('')}
                     </table>
                 </div>

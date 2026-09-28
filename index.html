@@ -39,7 +39,7 @@
             <div>
                 <div class="flex items-center space-x-2">
                     <h1 class="text-xl font-black tracking-tight text-white">Content Planner <span class="text-indigo-400">FALFX</span></h1>
-                    <span class="bg-indigo-500/10 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/20 uppercase tracking-wider">Pro v3.3</span>
+                    <span class="bg-indigo-500/10 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/20 uppercase tracking-wider">Pro v3.4</span>
                 </div>
                 <p class="text-xs text-slate-400">Smart Scheduling, Secure Folder Access & Realtime Sync</p>
             </div>
@@ -766,7 +766,6 @@
             updateDayLabel('c-edit', 'day-edit-info');
         }
 
-        // --- VALIDASI BENTROK TAKE (Hanya bermasalah jika bentrok dengan project lain) ---
         function validateTakeSchedule(takeVal, currentItemId) {
             if (!takeVal) return null;
             const takeDateObj = new Date(takeVal);
@@ -786,15 +785,11 @@
                 for (const folder of proj.folders) {
                     if (!folder.items) continue;
                     for (const item of folder.items) {
-                        // Jika ID sama (sedang mengedit item miliknya sendiri), abaikan bentrok
                         if (item.id === currentItemId) continue;
-                        
                         if (item.take && item.take === takeVal) {
-                            // Cek apakah item ini berada di project yang sama atau project lain
                             if (proj.id !== activeProjectId) {
                                 return `❌ Jadwal Bentrok! Waktu take tersebut sudah terisi oleh project lain (${proj.name}).`;
                             } else {
-                                // Jika bentrok dengan 1 project yang sama, diizinkan (tidak masalah)
                                 return null;
                             }
                         }
@@ -905,7 +900,7 @@
             if (activeProjectId && unlockedProjects[activeProjectId]) {
                 if (activeFolderId) {
                     btnText.innerText = "+ Tambah Konten";
-                    if (btnExportPdf) btnExportPdf.classList.remove('hidden'); // Tampilkan tombol ekspor PDF hanya saat di dalam project & folder aktif
+                    if (btnExportPdf) btnExportPdf.classList.remove('hidden');
                 } else {
                     btnText.innerText = "+ Tambah Folder Plan";
                     if (btnExportPdf) btnExportPdf.classList.add('hidden');
@@ -1167,7 +1162,7 @@
             saveDB(); renderSidebar(); renderWorkspace(); updateHeaderButtonState();
         }
 
-        // --- EKSPOR PDF KHUSUS FOLDER DALAM PROJECT AKTIF ---
+        // --- EKSPOR PDF DIPERBAIKI (TIDAK KEPOTONG + 1 GARIS PEMBATAS) ---
         window.openExportModal = function() {
             const { project, folder } = getActiveProjectAndFolder();
             if (!project || !folder) {
@@ -1184,33 +1179,37 @@
             closeModals();
 
             const container = document.getElementById('pdf-export-container');
-            // Menyiapkan elemen HTML lengkap agar terender sempurna pada PDF tanpa kosong
+            // Template HTML export diperbarui dengan inline style agar tidak terpotong di bagian bawah & diselipkan garis pembatas tunggal
             container.innerHTML = `
-                <div style="padding: 30px; font-family: 'Plus Jakarta Sans', Arial, sans-serif; width: 800px; background: #ffffff; color: #0f172a;">
-                    <h2 style="color: #4f46e5; margin: 0 0 5px 0; font-size: 22px;">CONTENT PLANNER FALFX REPORT</h2>
-                    <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Project: <b>${project.name}</b> | Folder Plan: <b>${folder.name}</b></p>
-                    <table border="1" cellspacing="0" cellpadding="8" style="width: 100%; border-collapse: collapse; font-size: 11px; border-color: #cbd5e1;">
+                <div style="padding: 20px; font-family: 'Plus Jakarta Sans', Arial, sans-serif; width: 100%; max-width: 750px; background: #ffffff; color: #0f172a; box-sizing: border-box;">
+                    <h2 style="color: #4f46e5; margin: 0 0 5px 0; font-size: 20px;">CONTENT PLANNER FALFX REPORT</h2>
+                    <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">Project: <b>${project.name}</b> | Folder Plan: <b>${folder.name}</b></p>
+                    
+                    <!-- 1 Garis Pembatas Estetis -->
+                    <hr style="border: none; border-top: 2px solid #e2e8f0; margin-bottom: 15px;">
+
+                    <table border="1" cellspacing="0" cellpadding="6" style="width: 100%; border-collapse: collapse; font-size: 10px; border-color: #cbd5e1; page-break-inside: auto;">
                         <thead>
                             <tr style="background: #f1f5f9; color: #334155; text-align: left;">
-                                <th style="padding: 8px;">Week</th>
-                                <th style="padding: 8px;">Jadwal Upload</th>
-                                <th style="padding: 8px;">Nama Konten</th>
-                                <th style="padding: 8px;">Jenis</th>
-                                <th style="padding: 8px;">Take / Edit Schedule</th>
-                                <th style="padding: 8px;">Status</th>
-                                <th style="padding: 8px;">Link & Notes</th>
+                                <th style="padding: 6px;">Week</th>
+                                <th style="padding: 6px;">Jadwal Upload</th>
+                                <th style="padding: 6px;">Nama Konten</th>
+                                <th style="padding: 6px;">Jenis</th>
+                                <th style="padding: 6px;">Take / Edit Schedule</th>
+                                <th style="padding: 6px;">Status</th>
+                                <th style="padding: 6px;">Link & Notes</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${(folder.items && folder.items.length > 0) ? folder.items.map(i => `
-                                <tr>
-                                    <td style="padding: 8px; font-weight: bold; color: #4f46e5;">${i.week}</td>
-                                    <td style="padding: 8px;">${formatDisplayDateTime(i.uploadDate)}</td>
-                                    <td style="padding: 8px; font-weight: bold;">${i.title}</td>
-                                    <td style="padding: 8px;">${i.type}</td>
-                                    <td style="padding: 8px; font-size: 10px;">Take: ${formatDisplayDateTime(i.take)}<br>Edit:${formatDisplayDateTime(i.edit)}</td>
-                                    <td style="padding: 8px;"><b>${i.status}</b></td>
-                                    <td style="padding: 8px; font-size: 10px;">
+                                <tr style="page-break-inside: avoid; page-break-after: auto;">
+                                    <td style="padding: 6px; font-weight: bold; color: #4f46e5;">${i.week}</td>
+                                    <td style="padding: 6px;">${formatDisplayDateTime(i.uploadDate)}</td>
+                                    <td style="padding: 6px; font-weight: bold;">${i.title}</td>
+                                    <td style="padding: 6px;">${i.type}</td>
+                                    <td style="padding: 6px; font-size: 9px;">Take: ${formatDisplayDateTime(i.take)}<br>Edit:${formatDisplayDateTime(i.edit)}</td>
+                                    <td style="padding: 6px;"><b>${i.status}</b></td>
+                                    <td style="padding: 6px; font-size: 9px;">
                                         ${i.ref ? `<a href="${i.ref}" style="color: #4f46e5;">Link: ${i.ref}</a><br>` : ''}
                                         <span>${i.notes || '-'}</span>
                                     </td>
@@ -1218,7 +1217,10 @@
                             `).join('') : `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b;">Tidak ada konten di folder ini.</td></tr>`}
                         </tbody>
                     </table>
-                    <p style="font-size: 10px; color: #94a3b8; margin-top: 20px; text-align: right;">Dicetak otomatis melalui sistem Content Planner FALFX Pro v3.3</p>
+
+                    <!-- 1 Garis Pembatas Sebelum Footer -->
+                    <hr style="border: none; border-top: 1px solid #cbd5e1; margin-top: 20px; margin-bottom: 10px;">
+                    <p style="font-size: 9px; color: #94a3b8; text-align: right; margin: 0;">Dicetak otomatis melalui sistem Content Planner FALFX Pro v3.4</p>
                 </div>
             `;
             
@@ -1226,9 +1228,11 @@
 
             setTimeout(() => {
                 html2pdf().from(container).set({
-                    margin: 10, 
+                    margin: [8, 8, 8, 8], 
                     filename: `Plan_${project.name}_${folder.name}`.replace(/\s+/g,'_') + '.pdf', 
-                    jsPDF: { orientation: 'landscape', format: 'a4', unit: 'mm' }
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                    jsPDF: { orientation: 'portrait', format: 'a4', unit: 'mm' }
                 }).save().then(() => { 
                     container.classList.add('hidden'); 
                     container.innerHTML = ''; 

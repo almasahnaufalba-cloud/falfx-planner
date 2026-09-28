@@ -1,22 +1,225 @@
-<!-- Modal: Secret Owner / Schedule & Rest Dates -->
-    <div id="schedule-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg p-6 rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <h3 class="text-lg font-extrabold text-white mb-1">Pengaturan Privasi & Hari Libur Owner</h3>
-            <p class="text-xs text-slate-400 mb-5">Atur hari libur rutin mingguan dan tanggal libur khusus.</p>
-            <div class="space-y-5">
-                
-                <!-- (Kode Hari Libur Mingguan Tetap Ada Di Sini) -->
-                <!-- (Kode Tanggal Libur Khusus Tetap Ada Di Sini) -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Planner FALFX</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2pdf Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
 
-                <!-- MULAI DARI SINI: Tambahan Bagian Daftar PIN Project -->
-                <div>
-                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">Daftar Sandi / PIN Project</label>
-                    <p class="text-[11px] text-slate-400 mb-2">Daftar otomatis semua project beserta sandinya.</p>
-                    <div id="project-pin-list" class="flex flex-col gap-2 max-h-32 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-slate-800 custom-scrollbar">
-                        <!-- Dynamic specific rest dates pills akan masuk ke sini -->
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-900/90 border-b border-slate-800/85 backdrop-blur-md px-6 py-4 flex flex-col lg:flex-row items-center justify-between shadow-2xl gap-4 sticky top-0 z-40">
+        <div class="flex items-center space-x-3.5">
+            <div onclick="handleLogoClick(event)" title="Klik 3x untuk Pengaturan Owner" class="bg-gradient-to-tr from-indigo-600 to-violet-500 text-white p-2.5 rounded-2xl font-bold shadow-lg shadow-indigo-500/30 flex items-center justify-center cursor-pointer hover:scale-105 transition active:scale-95">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h1 class="text-xl font-black tracking-tight text-white">Content Planner <span class="text-indigo-400">FALFX</span></h1>
+                    <span class="bg-indigo-500/10 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/20 uppercase tracking-wider">Pro v3.0</span>
+                </div>
+                <p class="text-xs text-slate-400">Smart Scheduling, Secure Folder Access & Realtime Sync</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Tombol Alarm / Notifikasi Toggle -->
+            <button onclick="toggleNotificationAlarm()" id="btn-alarm" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5">
+                <span id="btn-alarm-text">🔔 Ingatkan Upload</span>
+            </button>
+            <button onclick="openExportModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center space-x-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Ekspor PDF</span>
+            </button>
+            <button id="header-dynamic-btn" onclick="handleHeaderAction()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center space-x-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span id="header-btn-text">+ Project Baru</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Sidebar: Projects Only (Collapsible) -->
+        <aside id="sidebar-container" class="w-80 bg-slate-900/60 border-r border-slate-800/80 flex flex-col p-4 overflow-y-auto custom-scrollbar transition-all duration-300 relative">
+            <div class="flex items-center justify-between mb-3 px-2">
+                <span id="sidebar-title-label" class="text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Daftar Project</span>
+                <div class="flex items-center space-x-1">
+                    <span id="sidebar-proj-count" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-semibold">0 Proyek</span>
+                    <!-- Tombol Toggle Minimize Sidebar -->
+                    <button onclick="toggleSidebarCollapse()" id="sidebar-toggle-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-1.5 rounded-lg text-xs transition" title="Sembunyikan Sidebar">
+                        ◀
+                    </button>
+                </div>
+            </div>
+            <div id="project-list" class="space-y-3">
+                <!-- Dynamic Project List -->
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 bg-slate-950 p-6 md:p-8 overflow-y-auto custom-scrollbar flex flex-col">
+            
+            <!-- Empty Selection State -->
+            <div id="no-selection" class="flex-1 flex flex-col items-center justify-center text-center p-8">
+                <div class="bg-slate-900/80 p-8 rounded-3xl border border-slate-800 shadow-2xl max-w-md backdrop-blur-md">
+                    <div class="w-20 h-20 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-indigo-500/20 shadow-inner">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Pilih Folder Terproteksi FALFX</h3>
+                    <p class="text-xs text-slate-400 mb-6 leading-relaxed">Klik salah satu Project dan Folder di sidebar, lalu masukkan sandi PIN untuk membuka isi tabel konten.</p>
+                    <button onclick="openProjectModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-5 py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">+ Buat Project Baru</button>
+                </div>
+            </div>
+
+            <!-- Workspace Loaded State -->
+            <div id="workspace-content" class="hidden flex-1 flex flex-col">
+                <div class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-800/85 mb-6 gap-4">
+                    <div class="flex items-center space-x-4">
+                        <div id="project-logo-display" class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-lg"></div>
+                        <div>
+                            <div class="flex items-center space-x-2 text-xs text-indigo-400 font-semibold mb-0.5">
+                                <span id="bc-project-name">Project Name</span>
+                                <span>/</span>
+                                <span id="bc-folder-name" class="text-slate-300">Plan Folder</span>
+                            </div>
+                            <h2 id="workspace-title" class="text-2xl font-black text-white tracking-tight">Detail Content Plan</h2>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2.5">
+                        <button onclick="openContentModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center space-x-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            <span>Tambah Konten</span>
+                        </button>
+                        <button onclick="openPlanModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-xl border border-slate-700 transition flex items-center space-x-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <span>+ Tambah Folder Plan</span>
+                        </button>
                     </div>
                 </div>
-                <!-- AKHIR TAMBAHAN -->
+
+                <!-- Dashboard Stat Cards -->
+                <div class="mb-3 flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ringkasan & Filter Cepat</span>
+                    <span id="active-filter-indicator" class="text-xs text-indigo-400 font-semibold bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20">Menampilkan: Semua Konten</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">
+                    <div onclick="toggleFilter('all')" id="card-filter-all" class="bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 p-4 rounded-2xl cursor-pointer transition shadow-lg active:scale-95 ring-2 ring-indigo-500">
+                        <div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold text-slate-400">Total Konten</span><span>📦</span></div>
+                        <h3 id="stat-total" class="text-2xl font-black text-white">0</h3>
+                    </div>
+                    <div onclick="toggleFilter('Reels')" id="card-filter-Reels" class="bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 p-4 rounded-2xl cursor-pointer transition shadow-lg active:scale-95">
+                        <div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold text-indigo-400">Reels</span><span>🎥</span></div>
+                        <h3 id="stat-reels" class="text-2xl font-black text-white">0</h3>
+                    </div>
+                    <div onclick="toggleFilter('TikTok')" id="card-filter-TikTok" class="bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 p-4 rounded-2xl cursor-pointer transition shadow-lg active:scale-95">
+                        <div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold text-purple-400">TikTok</span><span>🎵</span></div>
+                        <h3 id="stat-tiktok" class="text-2xl font-black text-white">0</h3>
+                    </div>
+                    <div onclick="toggleFilter('Feed')" id="card-filter-Feed" class="bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 p-4 rounded-2xl cursor-pointer transition shadow-lg active:scale-95">
+                        <div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold text-amber-400">Feed / Story</span><span>📸</span></div>
+                        <h3 id="stat-feed" class="text-2xl font-black text-white">0</h3>
+                    </div>
+                    <div onclick="toggleFilter('done')" id="card-filter-done" class="bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 p-4 rounded-2xl cursor-pointer transition shadow-lg active:scale-95">
+                        <div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold text-emerald-400">Done / Selesai</span><span>✨</span></div>
+                        <h3 id="stat-uploaded" class="text-2xl font-black text-white">0</h3>
+                    </div>
+                </div>
+
+                <!-- Table Content Container -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex-1 flex flex-col">
+                    <div class="overflow-x-auto flex-1 custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-800/60 text-slate-400 text-[11px] uppercase tracking-wider border-b border-slate-800">
+                                    <th class="py-3.5 px-4 font-bold">Week</th>
+                                    <th class="py-3.5 px-4 font-bold">Jadwal Upload</th>
+                                    <th class="py-3.5 px-4 font-bold">Nama Konten</th>
+                                    <th class="py-3.5 px-4 font-bold">Jenis Konten</th>
+                                    <th class="py-3.5 px-4 font-bold">Take / Edit</th>
+                                    <th class="py-3.5 px-4 font-bold">Status</th>
+                                    <th class="py-3.5 px-4 font-bold">Link & Keterangan</th>
+                                    <th class="py-3.5 px-4 font-bold text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="content-table-body" class="divide-y divide-slate-800/60 text-xs"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Hidden PDF Template Container -->
+    <div id="pdf-export-container" class="hidden"></div>
+
+    <!-- Modal: Secret Owner / Schedule, Rest Dates & Project Passwords -->
+    <div id="schedule-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg p-6 rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <h3 class="text-lg font-extrabold text-white mb-1">Pengaturan Privasi & Info Project Owner</h3>
+            <p class="text-xs text-slate-400 mb-5">Atur hari libur rutin, tanggal libur khusus, serta daftar PIN sandi seluruh project.</p>
+            <div class="space-y-5">
+                
+                <!-- Section 1: Hari Libur Mingguan -->
+                <div>
+                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2.5">Hari Istirahat Rutin Mingguan</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <label class="flex items-center space-x-2.5 bg-slate-950 p-3 rounded-2xl border border-slate-800 cursor-pointer">
+                            <input type="checkbox" value="1" class="rest-day-checkbox accent-indigo-600 w-4 h-4 rounded"><span class="text-xs font-semibold text-slate-200">Senin</span>
+                        </label>
+                        <label class="flex items-center space-x-2.5 bg-slate-950 p-3 rounded-2xl border border-slate-800 cursor-pointer">
+                            <input type="checkbox" value="2" class="rest-day-checkbox accent-indigo-600 w-4 h-4 rounded"><span class="text-xs font-semibold text-slate-200">Selasa</span>
+                        </label>
+                        <label class="flex items-center space-x-2.5 bg-slate-950 p-3 rounded-2xl border border-slate-800 cursor-pointer">
+                            <input type="checkbox" value="3" class="rest-day-checkbox accent-indigo-600 w-4 h-4 rounded"><span class="text-xs font-semibold text-slate-200">Rabu</span>
+                        </label>
+                        <label class="flex items-center space-x-2.5 bg-slate-950 p-3 rounded-2xl border border-slate-800 cursor-pointer">
+                            <input type="checkbox" value="4" class="rest-day-checkbox accent-indigo-600 w-4 h-4 rounded"><span class="text-xs font-semibold text-slate-200">Kamis</span>
+                        </label>
+                        <label class="flex items-center space-x-2.5 bg-slate-950 p-3 rounded-2xl border border-slate-800 cursor-pointer">
+                            <input type="checkbox" value="5" class="rest-day-checkbox accent-indigo-600 w-4 h-4 rounded"><span class="text-xs font-semibold text-slate-200">Jumat</span>
+                        </label>
+                        <label class="flex items-center space-x-2.5 bg-slate-950 p-3 rounded-2xl border border-slate-800 cursor-pointer">
+                            <input type="checkbox" value="6" class="rest-day-checkbox accent-indigo-600 w-4 h-4 rounded" checked><span class="text-xs font-semibold text-slate-200">Sabtu</span>
+                        </label>
+                        <label class="flex items-center space-x-2.5 bg-slate-950 p-3 rounded-2xl border border-slate-800 cursor-pointer">
+                            <input type="checkbox" value="0" class="rest-day-checkbox accent-indigo-600 w-4 h-4 rounded" checked><span class="text-xs font-semibold text-slate-200">Minggu</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Section 2: Tanggal Libur Khusus -->
+                <div>
+                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">Request Tanggal Libur Khusus</label>
+                    <p class="text-[11px] text-slate-400 mb-2">Tambahkan tanggal spesifik di mana Anda libur (tidak boleh ada jadwal take).</p>
+                    <div class="flex space-x-2 mb-3">
+                        <input type="date" id="new-rest-date-input" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <button type="button" onclick="addSpecificRestDate()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2 rounded-xl transition">+ Tambah Tanggal</button>
+                    </div>
+                    <div id="rest-dates-list" class="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-slate-800">
+                        <!-- Dynamic specific rest dates pills -->
+                    </div>
+                </div>
+
+                <!-- Section 3: Daftar Sandi / PIN Project (Fitur Baru) -->
+                <div>
+                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">🔑 Daftar Sandi PIN Project</label>
+                    <p class="text-[11px] text-slate-400 mb-2">Daftar sandi PIN akses yang tersimpan otomatis untuk setiap project:</p>
+                    <div id="project-passwords-list" class="space-y-2 max-h-40 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-slate-800 custom-scrollbar">
+                        <!-- Dynamic project passwords will be rendered here -->
+                    </div>
+                </div>
 
                 <div class="flex justify-end space-x-2 pt-4 border-t border-slate-800">
                     <button type="button" onclick="closeModals()" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white">Batal</button>
@@ -25,3 +228,1000 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal: PIN Authentication -->
+    <div id="pin-auth-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm p-6 rounded-3xl shadow-2xl text-center">
+            <div class="w-14 h-14 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-500/20">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            </div>
+            <h3 id="pin-modal-title" class="text-lg font-extrabold text-white mb-1">Akses Terproteksi</h3>
+            <p id="pin-modal-desc" class="text-xs text-slate-400 mb-5">Masukkan sandi untuk membuka akses.</p>
+            <div class="space-y-4">
+                <div class="relative">
+                    <input type="password" id="pin-input-field" placeholder="Masukkan Sandi" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-center tracking-widest text-white focus:outline-none focus:border-indigo-500">
+                    <button type="button" onclick="togglePinVisibility()" id="pin-eye-btn" class="absolute right-3.5 top-3 text-slate-400 hover:text-white text-xs font-semibold">👁️ Lihat</button>
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button type="button" onclick="closeModals()" class="flex-1 px-4 py-2.5 text-xs font-semibold bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700">Batal</button>
+                    <button type="button" onclick="verifyPinAction()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2.5 rounded-xl shadow-lg">Buka Akses</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: New Project -->
+    <div id="project-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md p-6 rounded-3xl shadow-2xl">
+            <h3 class="text-lg font-extrabold text-white mb-4">Buat Project Baru & Sandi Akses</h3>
+            <form onsubmit="handleCreateProject(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Nama Project / Klien</label>
+                    <input type="text" id="project-name-input" required placeholder="Contoh: Sedjaya Lifestyle" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Sandi / PIN Project Ini</label>
+                    <div class="relative">
+                        <input type="password" id="project-pin-input" required placeholder="Buat PIN sandi" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <button type="button" onclick="toggleNewProjPinVisibility()" id="proj-pin-eye" class="absolute right-3.5 top-2.5 text-slate-400 hover:text-white text-xs font-semibold">👁️ Lihat</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Logo Proyek (Opsional)</label>
+                    <input type="file" id="project-logo-input" accept="image/*" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-indigo-400 cursor-pointer">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Nama Folder Plan Pertama</label>
+                    <input type="text" id="initial-folder-input" required placeholder="Contoh: Plan Oktober 2026" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModals()" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white">Batal</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-lg">Simpan Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: New Plan Folder / File -->
+    <div id="plan-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md p-6 rounded-3xl shadow-2xl">
+            <h3 class="text-lg font-extrabold text-white mb-4">Tambah Folder Plan Baru</h3>
+            <form onsubmit="handleCreatePlan(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Nama Folder Plan</label>
+                    <input type="text" id="plan-name-input" required placeholder="Contoh: Plan November 2026" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModals()" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white">Batal</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-lg">Tambah Folder Plan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add/Edit Content Item -->
+    <div id="content-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-xl p-6 rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <h3 id="content-modal-title" class="text-lg font-extrabold text-white mb-4">Tambah Konten Baru</h3>
+            <form onsubmit="handleSaveContent(event)" class="space-y-4">
+                <input type="hidden" id="edit-content-id">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1.5">Minggu (Week)</label>
+                        <select id="c-week" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <option value="W1">W1</option><option value="W2">W2</option><option value="W3">W3</option><option value="W4">W4</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1.5">Jenis Konten</label>
+                        <select id="c-type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <option value="Reels">🎥 Reels</option>
+                            <option value="TikTok">🎵 TikTok</option>
+                            <option value="Feed">📸 Feed</option>
+                            <option value="Story">📱 Story</option>
+                            <option value="Lainnya">✨ Lainnya</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Nama Konten / Judul</label>
+                    <input type="text" id="c-title" required placeholder="Contoh: Cinematic Vlog Sedjaya" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1.5">Jadwal Upload</label>
+                        <input type="datetime-local" id="c-upload-date" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1.5">Status</label>
+                        <select id="c-status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <option value="Idea / Draft">Idea / Draft</option>
+                            <option value="Planned">Planned</option>
+                            <option value="Take">Take</option>
+                            <option value="Editing">Editing</option>
+                            <option value="Ready">Ready</option>
+                            <option value="Uploaded">Uploaded</option>
+                            <option value="Done">✨ Done (Selesai)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1.5">Waktu Take / Syuting</label>
+                        <input type="datetime-local" id="c-take" onchange="autoCalculateEditingDate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1.5">Waktu Edit (+1 Hari Otomatis)</label>
+                        <input type="date" id="c-edit" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Link Referensi (URL)</label>
+                    <input type="url" id="c-ref" placeholder="https://..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Keterangan / Notes</label>
+                    <textarea id="c-notes" rows="2" placeholder="Catatan visual atau caption..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModals()" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white">Batal</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-lg">Simpan Konten</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Export PDF -->
+    <div id="export-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md p-6 rounded-3xl shadow-2xl">
+            <h3 class="text-lg font-extrabold text-white mb-2">Ekspor PDF Laporan Klien</h3>
+            <p class="text-xs text-slate-400 mb-4">Pilih Project dan Folder Plan yang ingin diexport.</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Pilih Project</label>
+                    <select id="export-project-select" onchange="populateExportFolders()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Pilih Folder Plan</label>
+                    <select id="export-folder-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"></select>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModals()" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white">Batal</button>
+                    <button type="button" onclick="executeExportPDF()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-lg">Download PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK & Script Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyDHivzKV8jSGIcRIM23NK0p-NUpZ6mXinc",
+          authDomain: "content-planner-4f9bf.firebaseapp.com",
+          databaseURL: "https://content-planner-4f9bf-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "content-planner-4f9bf",
+          storageBucket: "content-planner-4f9bf.firebasestorage.app",
+          messagingSenderId: "156234383997",
+          appId: "1:156234383997:web:d2c44154b59ee5c0a5a714",
+          measurementId: "G-H36DC2RWWR"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const database = getDatabase(app);
+        const plannerRef = ref(database, 'content_planner');
+
+        let restDays = JSON.parse(localStorage.getItem('content_plan_falfx_rest_days')) || [0, 6];
+        let specificRestDates = JSON.parse(localStorage.getItem('content_plan_falfx_specific_rest_dates')) || [];
+        let ownerPinCode = "510510"; 
+        let activeFilter = 'all';
+        let isAlarmActive = false;
+        let isSidebarCollapsed = false;
+
+        let defaultInitialDB = [
+            {
+                id: 'proj_1',
+                name: 'Sedjaya Lifestyle',
+                pin: '1234',
+                logo: '',
+                folders: [
+                    {
+                        id: 'folder_1',
+                        name: 'Plan Oktober 2026',
+                        items: [
+                            { id: 'c_1', week: 'W1', title: 'Cinematic Reel A New Habit', type: 'Reels', uploadDate: '2026-10-01T19:00', take: '2026-09-29T14:00', edit: '2026-09-30', status: 'Done', ref: 'https://tiktok.com', notes: 'Audio Wonderwall' }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        let rawLocalDB = localStorage.getItem('content_plan_falfx_db');
+        let db = [];
+        try {
+            db = rawLocalDB ? JSON.parse(rawLocalDB) : defaultInitialDB;
+            if (!Array.isArray(db) || db.length === 0) db = defaultInitialDB;
+        } catch(e) {
+            db = defaultInitialDB;
+        }
+
+        let activeProjectId = null;
+        let activeFolderId = null;
+        let unlockedProjects = {}; 
+        let projectGraceTimers = {}; 
+        let pendingPinCallback = null;
+
+        function saveDB() {
+            localStorage.setItem('content_plan_falfx_db', JSON.stringify(db));
+            set(ref(database, 'content_planner/db'), db);
+        }
+
+        function saveSettings() {
+            localStorage.setItem('content_plan_falfx_rest_days', JSON.stringify(restDays));
+            localStorage.setItem('content_plan_falfx_specific_rest_dates', JSON.stringify(specificRestDates));
+            set(ref(database, 'content_planner/settings'), { restDays, specificRestDates });
+        }
+
+        onValue(plannerRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.db && Array.isArray(data.db) && data.db.length > 0) {
+                db = data.db;
+                localStorage.setItem('content_plan_falfx_db', JSON.stringify(db));
+            }
+            if (data && data.settings) {
+                if (data.settings.restDays) {
+                    restDays = data.settings.restDays;
+                    localStorage.setItem('content_plan_falfx_rest_days', JSON.stringify(restDays));
+                }
+                if (data.settings.specificRestDates) {
+                    specificRestDates = data.settings.specificRestDates;
+                    localStorage.setItem('content_plan_falfx_specific_rest_dates', JSON.stringify(specificRestDates));
+                }
+            }
+
+            renderSidebar();
+            renderWorkspace();
+            updateHeaderButtonState();
+        });
+
+        // Fitur Toggle Tombol Alarm (Ingatkan Upload / Nonaktifkan Notifikasi)
+        window.toggleNotificationAlarm = function() {
+            if (!("Notification" in window)) { 
+                alert("Browser tidak mendukung Notifikasi."); 
+                return; 
+            }
+
+            const btnTextEl = document.getElementById('btn-alarm-text');
+            const btnEl = document.getElementById('btn-alarm');
+
+            if (!isAlarmActive) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        isAlarmActive = true;
+                        btnTextEl.innerText = "🔕 Nonaktifkan Notifikasi";
+                        btnEl.className = "bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5";
+                        alert("🔔 Alarm & Notifikasi Upload Berhasil Diaktifkan!");
+                    } else {
+                        alert("Izin notifikasi ditolak oleh browser.");
+                    }
+                });
+            } else {
+                isAlarmActive = false;
+                btnTextEl.innerText = "🔔 Ingatkan Upload";
+                btnEl.className = "bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5";
+                alert("🔕 Notifikasi Upload Telah Dinonaktifkan.");
+            }
+        }
+
+        // Fitur Toggle Sembunyikan / Perkecil Sidebar (Fullscreen View)
+        window.toggleSidebarCollapse = function() {
+            isSidebarCollapsed = !isSidebarCollapsed;
+            const sidebar = document.getElementById('sidebar-container');
+            const toggleBtn = document.getElementById('sidebar-toggle-btn');
+            const titleLabel = document.getElementById('sidebar-title-label');
+            const projCount = document.getElementById('sidebar-proj-count');
+
+            if (isSidebarCollapsed) {
+                sidebar.classList.remove('w-80');
+                sidebar.classList.add('w-20');
+                toggleBtn.innerText = "▶";
+                toggleBtn.title = "Tampilkan Kembali Sidebar";
+                titleLabel.classList.add('hidden');
+                projCount.classList.add('hidden');
+            } else {
+                sidebar.classList.remove('w-20');
+                sidebar.classList.add('w-80');
+                toggleBtn.innerText = "◀";
+                toggleBtn.title = "Sembunyikan Sidebar";
+                titleLabel.classList.remove('hidden');
+                projCount.classList.remove('hidden');
+            }
+            renderSidebar();
+        }
+
+        let clickCount = 0;
+        let clickTimer = null;
+        function handleLogoClick(e) {
+            clickCount++;
+            if (clickCount === 1) {
+                clickTimer = setTimeout(() => { clickCount = 0; }, 500);
+            } else if (clickCount >= 3) {
+                clearTimeout(clickTimer);
+                clickCount = 0;
+                openPinPrompt("Akses Pengaturan Owner (Privasi)", ownerPinCode, () => {
+                    openScheduleModal();
+                });
+            }
+        }
+
+        function openPinPrompt(title, correctPin, onSuccess) {
+            document.getElementById('pin-modal-title').innerText = title;
+            document.getElementById('pin-modal-desc').innerText = "Masukkan sandi rahasia untuk melanjutkan.";
+            const pinField = document.getElementById('pin-input-field');
+            pinField.value = '';
+            pinField.type = 'password';
+            document.getElementById('pin-eye-btn').innerText = "👁️ Lihat";
+            
+            pendingPinCallback = (inputVal) => {
+                if (inputVal === correctPin) {
+                    closeModals();
+                    onSuccess();
+                } else {
+                    alert("Sandi salah!");
+                }
+            };
+            document.getElementById('pin-auth-modal').classList.remove('hidden');
+            pinField.focus();
+        }
+
+        function verifyPinAction() {
+            const val = document.getElementById('pin-input-field').value;
+            if (pendingPinCallback) pendingPinCallback(val);
+        }
+
+        function togglePinVisibility() {
+            const pinField = document.getElementById('pin-input-field');
+            const eyeBtn = document.getElementById('pin-eye-btn');
+            if (pinField.type === 'password') {
+                pinField.type = 'text';
+                eyeBtn.innerText = "🔒 Sembunyikan";
+            } else {
+                pinField.type = 'password';
+                eyeBtn.innerText = "👁️ Lihat";
+            }
+        }
+
+        function toggleNewProjPinVisibility() {
+            const pinInput = document.getElementById('project-pin-input');
+            const eyeBtn = document.getElementById('proj-pin-eye');
+            if (pinInput.type === 'password') {
+                pinInput.type = 'text';
+                eyeBtn.innerText = "🔒 Sembunyikan";
+            } else {
+                pinInput.type = 'password';
+                eyeBtn.innerText = "👁️ Lihat";
+            }
+        }
+
+        // Fungsi Render Daftar Sandi Project di Modal Privasi
+        function renderProjectPasswordsList() {
+            const container = document.getElementById('project-passwords-list');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!db || db.length === 0) {
+                container.innerHTML = `<span class="text-slate-500 text-xs italic p-1">Belum ada project yang tersimpan.</span>`;
+                return;
+            }
+            db.forEach(proj => {
+                const item = document.createElement('div');
+                item.className = 'bg-slate-900 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between text-xs';
+                item.innerHTML = `
+                    <div class="flex items-center space-x-2 truncate">
+                        <span class="text-indigo-400 font-semibold">📁</span>
+                        <span class="font-bold text-white truncate">${proj.name}</span>
+                    </div>
+                    <div class="flex items-center space-x-2 shrink-0">
+                        <span class="text-[11px] text-slate-400">PIN:</span>
+                        <span id="pin-text-${proj.id}" class="font-mono font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-lg text-xs tracking-wider">${proj.pin || '1234'}</span>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function openScheduleModal() {
+            document.querySelectorAll('.rest-day-checkbox').forEach(cb => {
+                cb.checked = restDays.includes(parseInt(cb.value));
+            });
+            renderSpecificRestDatesList();
+            renderProjectPasswordsList();
+            document.getElementById('schedule-modal').classList.remove('hidden');
+        }
+
+        window.addSpecificRestDate = function() {
+            const input = document.getElementById('new-rest-date-input');
+            const val = input.value;
+            if (!val) return;
+            if (!specificRestDates.includes(val)) {
+                specificRestDates.push(val);
+                renderSpecificRestDatesList();
+            }
+            input.value = '';
+        }
+
+        window.removeSpecificRestDate = function(dateStr) {
+            specificRestDates = specificRestDates.filter(d => d !== dateStr);
+            renderSpecificRestDatesList();
+        }
+
+        function renderSpecificRestDatesList() {
+            const container = document.getElementById('rest-dates-list');
+            if (!container) return;
+            container.innerHTML = '';
+            if (specificRestDates.length === 0) {
+                container.innerHTML = `<span class="text-slate-500 text-xs italic p-1">Belum ada tanggal libur khusus.</span>`;
+                return;
+            }
+            specificRestDates.forEach(d => {
+                const pill = document.createElement('div');
+                pill.className = 'bg-slate-900 border border-slate-700 text-indigo-300 text-xs px-2.5 py-1 rounded-xl flex items-center space-x-2';
+                pill.innerHTML = `<span>🗓️ ${d}</span><button type="button" onclick="removeSpecificRestDate('${d}')" class="text-red-400 hover:text-red-300 font-bold">×</button>`;
+                container.appendChild(pill);
+            });
+        }
+
+        function saveRestDaysSettings() {
+            restDays = [];
+            document.querySelectorAll('.rest-day-checkbox:checked').forEach(cb => {
+                restDays.push(parseInt(cb.value));
+            });
+            saveSettings();
+            closeModals();
+        }
+
+        function autoCalculateEditingDate() {
+            const takeVal = document.getElementById('c-take').value;
+            if (!takeVal) return;
+            const takeDate = new Date(takeVal);
+            if (isNaN(takeDate.getTime())) return;
+            let editDate = new Date(takeDate);
+            editDate.setDate(editDate.getDate() + 1);
+            const yyyy = editDate.getFullYear();
+            const mm = String(editDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(editDate.getDate()).padStart(2, '0');
+            document.getElementById('c-edit').value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        function validateTakeSchedule(takeVal, currentItemId) {
+            if (!takeVal) return null;
+            const takeDateObj = new Date(takeVal);
+            if (isNaN(takeDateObj.getTime())) return null;
+
+            const dayOfWeek = takeDateObj.getDay();
+            if (restDays.includes(dayOfWeek)) {
+                return "maaf waktu sudah terisi project lain";
+            }
+
+            const yyyy = takeDateObj.getFullYear();
+            const mm = String(takeDateObj.getMonth() + 1).padStart(2, '0');
+            const dd = String(takeDateObj.getDate()).padStart(2, '0');
+            const dateStrOnly = `${yyyy}-${mm}-${dd}`;
+            if (specificRestDates.includes(dateStrOnly)) {
+                return "maaf waktu sudah terisi project lain";
+            }
+
+            for (const proj of db) {
+                if (!proj.folders) continue;
+                for (const folder of proj.folders) {
+                    if (!folder.items) continue;
+                    for (const item of folder.items) {
+                        if (item.id !== currentItemId && item.take && item.take === takeVal) {
+                            return "maaf waktu sudah terisi project lain";
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        function toggleFilter(filterName) {
+            if (activeFilter === filterName && filterName !== 'all') {
+                activeFilter = 'all';
+            } else {
+                activeFilter = filterName;
+            }
+
+            ['all', 'Reels', 'TikTok', 'Feed', 'done'].forEach(f => {
+                const el = document.getElementById(`card-filter-${f}`);
+                if (el) {
+                    if (f === activeFilter) el.classList.add('ring-2', 'ring-indigo-500');
+                    else el.classList.remove('ring-2', 'ring-indigo-500');
+                }
+            });
+
+            document.getElementById('active-filter-indicator').innerText = `Menampilkan: ${activeFilter === 'all' ? 'Semua Konten' : activeFilter}`;
+            renderWorkspace();
+        }
+
+        function renderSidebar() {
+            const listContainer = document.getElementById('project-list');
+            if (!listContainer) return;
+            listContainer.innerHTML = '';
+            document.getElementById('sidebar-proj-count').innerText = `${db.length} Proyek`;
+
+            db.forEach(project => {
+                const projDiv = document.createElement('div');
+                projDiv.className = 'space-y-1 bg-slate-950/40 p-2.5 rounded-2xl border border-slate-800/80';
+
+                const logoHTML = project.logo 
+                    ? `<img src="${project.logo}" class="w-6 h-6 rounded-md object-cover shrink-0">` 
+                    : `<span class="w-6 h-6 rounded-md bg-indigo-500/20 text-indigo-400 text-xs font-bold flex items-center justify-center shrink-0">${project.name.charAt(0)}</span>`;
+
+                const isUnlocked = unlockedProjects[project.id];
+
+                if (isSidebarCollapsed) {
+                    // Tampilan Minimalis saat sidebar diperkecil (Hanya Logo & Folder)
+                    projDiv.className = 'flex flex-col items-center space-y-2 py-2 bg-slate-950/40 rounded-xl border border-slate-800/80';
+                    projDiv.innerHTML = `
+                        <div class="cursor-pointer" onclick="handleProjectClick('${project.id}')" title="${project.name}">
+                            ${logoHTML}
+                        </div>
+                    `;
+                    if (isUnlocked && project.folders) {
+                        project.folders.forEach(folder => {
+                            const isSelected = (project.id === activeProjectId && folder.id === activeFolderId);
+                            const fBtn = document.createElement('div');
+                            fBtn.className = `w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer text-xs font-bold ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`;
+                            fBtn.title = folder.name;
+                            fBtn.innerText = folder.name.replace(/[^0-9a-zA-Z]/g, '').substring(0, 2).toUpperCase() || 'F';
+                            fBtn.onclick = () => selectFolder(project.id, folder.id);
+                            projDiv.appendChild(fBtn);
+                        });
+                    }
+                } else {
+                    // Tampilan Normal Sidebar
+                    projDiv.innerHTML = `
+                        <div class="flex items-center justify-between cursor-pointer" onclick="handleProjectClick('${project.id}')">
+                            <div class="flex items-center space-x-2.5 truncate">
+                                ${logoHTML}
+                                <span class="text-xs font-bold text-white truncate">${project.name}</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <span class="text-[10px] text-slate-400 px-1.5 py-0.5 rounded bg-slate-800">${isUnlocked ? '🔓' : '🔒'}</span>
+                                <button onclick="event.stopPropagation(); deleteProject('${project.id}')" class="text-slate-500 hover:text-red-400 text-xs p-1" title="Hapus Project">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+
+                    if (isUnlocked) {
+                        const foldersDiv = document.createElement('div');
+                        foldersDiv.className = 'pl-2 space-y-1 mt-2 border-l border-indigo-500/30 ml-2 pt-1';
+
+                        if (project.folders && project.folders.length > 0) {
+                            project.folders.forEach(folder => {
+                                const isSelected = (project.id === activeProjectId && folder.id === activeFolderId);
+                                const fBtn = document.createElement('div');
+                                fBtn.className = `flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition ${isSelected ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`;
+                                fBtn.innerHTML = `
+                                    <span onclick="selectFolder('${project.id}', '${folder.id}')" class="truncate flex-1">📁 ${folder.name} (${folder.items ? folder.items.length : 0})</span>
+                                    <button onclick="event.stopPropagation(); deleteFolder('${project.id}', '${folder.id}')" class="text-slate-400 hover:text-red-300 ml-1" title="Hapus Folder Plan">✕</button>
+                                `;
+                                foldersDiv.appendChild(fBtn);
+                            });
+                        }
+                        projDiv.appendChild(foldersDiv);
+                    }
+                }
+
+                listContainer.appendChild(projDiv);
+            });
+        }
+
+        window.handleProjectClick = function(pId) {
+            const proj = db.find(p => p.id === pId);
+            if (!proj) return;
+
+            if (unlockedProjects[pId]) {
+                delete unlockedProjects[pId];
+                if (projectGraceTimers[pId]) clearTimeout(projectGraceTimers[pId]);
+                projectGraceTimers[pId] = setTimeout(() => {
+                    delete projectGraceTimers[pId];
+                }, 10000);
+
+                if (activeProjectId === pId) {
+                    activeProjectId = null;
+                    activeFolderId = null;
+                }
+                renderSidebar();
+                renderWorkspace();
+                updateHeaderButtonState();
+            } else {
+                if (projectGraceTimers[pId]) {
+                    clearTimeout(projectGraceTimers[pId]);
+                    delete projectGraceTimers[pId];
+                    unlockedProjects[pId] = true;
+                    activeProjectId = pId;
+                    activeFolderId = null; 
+                    renderSidebar();
+                    renderWorkspace();
+                    updateHeaderButtonState();
+                } else {
+                    openPinPrompt(`Buka Folder (${proj.name})`, proj.pin || '1234', () => {
+                        unlockedProjects[pId] = true;
+                        activeProjectId = pId;
+                        activeFolderId = null; 
+                        renderSidebar();
+                        renderWorkspace();
+                        updateHeaderButtonState();
+                    });
+                }
+            }
+        }
+
+        window.selectFolder = function(pId, fId) {
+            activeProjectId = pId;
+            activeFolderId = fId;
+            renderSidebar();
+            renderWorkspace();
+            updateHeaderButtonState();
+        }
+
+        function updateHeaderButtonState() {
+            const btnText = document.getElementById('header-btn-text');
+            if (!btnText) return;
+            
+            if (activeProjectId && unlockedProjects[activeProjectId]) {
+                if (activeFolderId) {
+                    btnText.innerText = "+ Tambah Konten";
+                } else {
+                    btnText.innerText = "+ Tambah Folder Plan";
+                }
+            } else {
+                btnText.innerText = "+ Project Baru";
+            }
+        }
+
+        window.handleHeaderAction = function() {
+            if (activeProjectId && unlockedProjects[activeProjectId]) {
+                if (activeFolderId) {
+                    openContentModal();
+                } else {
+                    openPlanModal();
+                }
+            } else {
+                openProjectModal();
+            }
+        }
+
+        function getActiveProjectAndFolder() {
+            const project = db.find(p => p.id === activeProjectId);
+            if (!project) return { project: null, folder: null };
+            const folder = (project.folders || []).find(f => f.id === activeFolderId);
+            return { project, folder };
+        }
+
+        function formatDisplayDateTime(dtStr) {
+            if (!dtStr) return '-';
+            try {
+                const d = new Date(dtStr);
+                if (isNaN(d.getTime())) return dtStr;
+                return d.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB';
+            } catch(e) { return dtStr; }
+        }
+
+        function renderWorkspace() {
+            const { project, folder } = getActiveProjectAndFolder();
+            const noSel = document.getElementById('no-selection');
+            const wsContent = document.getElementById('workspace-content');
+            
+            if (!project || !unlockedProjects[project.id] || !folder) { 
+                noSel.classList.remove('hidden'); 
+                wsContent.classList.add('hidden'); 
+                return; 
+            }
+
+            noSel.classList.add('hidden');
+            wsContent.classList.remove('hidden');
+
+            const logoContainer = document.getElementById('project-logo-display');
+            if (project.logo) {
+                logoContainer.innerHTML = `<img src="${project.logo}" class="w-full h-full object-cover">`;
+            } else {
+                logoContainer.innerHTML = `<span class="text-xl font-black text-indigo-400">${project.name.charAt(0)}</span>`;
+            }
+
+            document.getElementById('bc-project-name').innerText = project.name;
+            document.getElementById('bc-folder-name').innerText = folder.name;
+            document.getElementById('workspace-title').innerText = `${project.name} — ${folder.name}`;
+
+            const items = folder.items || [];
+            document.getElementById('stat-total').innerText = items.length;
+            document.getElementById('stat-reels').innerText = items.filter(i => i.type === 'Reels').length;
+            document.getElementById('stat-tiktok').innerText = items.filter(i => i.type === 'TikTok').length;
+            document.getElementById('stat-feed').innerText = items.filter(i => i.type === 'Feed' || i.type === 'Story' || i.type === 'Lainnya').length;
+            document.getElementById('stat-uploaded').innerText = items.filter(i => i.status === 'Uploaded' || i.status === 'Done').length;
+
+            let filteredItems = items;
+            if (activeFilter === 'Reels' || activeFilter === 'TikTok') {
+                filteredItems = items.filter(i => i.type === activeFilter);
+            } else if (activeFilter === 'Feed') {
+                filteredItems = items.filter(i => i.type === 'Feed' || i.type === 'Story' || i.type === 'Lainnya');
+            } else if (activeFilter === 'done') {
+                filteredItems = items.filter(i => i.status === 'Uploaded' || i.status === 'Done');
+            }
+
+            const tbody = document.getElementById('content-table-body');
+            tbody.innerHTML = '';
+
+            if (filteredItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-slate-500 text-xs">Belum ada konten di kategori ini. Silakan klik + Tambah Konten.</td></tr>`;
+                return;
+            }
+
+            filteredItems.forEach(item => {
+                const tr = document.createElement('tr');
+                const isDone = (item.status === 'Done' || item.status === 'Uploaded');
+                tr.className = isDone ? 'bg-emerald-950/40 border-l-4 border-l-emerald-500 text-emerald-100' : 'hover:bg-slate-800/40 text-slate-200';
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 font-black ${isDone ? 'text-emerald-400' : 'text-indigo-400'}">${item.week}</td>
+                    <td class="py-3.5 px-4 text-xs font-medium">${formatDisplayDateTime(item.uploadDate)}</td>
+                    <td class="py-3.5 px-4 font-bold ${isDone ? 'text-emerald-300 line-through' : 'text-white'}">${item.title}</td>
+                    <td class="py-3.5 px-4 text-xs font-medium">${item.type}</td>
+                    <td class="py-3.5 px-4 text-xs text-slate-400">Take: ${formatDisplayDateTime(item.take)}<br>Edit: ${item.edit || '-'}</td>
+                    <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold border ${isDone ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-slate-800 text-slate-300 border-slate-700'}">${item.status}</span></td>
+                    <td class="py-3.5 px-4 text-xs max-w-xs truncate text-slate-400">
+                        ${item.ref ? `<a href="${item.ref}" target="_blank" class="text-indigo-400 underline block truncate">🔗 ${item.ref}</a>` : ''}
+                        <span>${item.notes || '-'}</span>
+                    </td>
+                    <td class="py-3.5 px-4 text-right space-x-1">
+                        <button onclick="editContent('${item.id}')" class="hover:text-indigo-400 p-1">✏️</button>
+                        <button onclick="deleteContent('${item.id}')" class="hover:text-red-400 p-1">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.openProjectModal = function() { 
+            if (activeProjectId && unlockedProjects[activeProjectId]) {
+                alert("Harap keluar/tutup project aktif terlebih dahulu sebelum membuat project baru!");
+                return;
+            }
+            document.getElementById('project-modal').classList.remove('hidden'); 
+        }
+
+        window.openPlanModal = function() { 
+            if (!activeProjectId) return alert("Pilih Project dulu!"); 
+            document.getElementById('plan-modal').classList.remove('hidden'); 
+        }
+
+        window.openContentModal = function(isEdit = false) {
+            if (!activeFolderId) return alert("Pilih Folder Plan dulu!");
+            if (!isEdit) {
+                document.getElementById('content-modal-title').innerText = "Tambah Konten Baru";
+                document.getElementById('edit-content-id').value = '';
+                document.getElementById('c-title').value = '';
+                document.getElementById('c-upload-date').value = '';
+                document.getElementById('c-take').value = '';
+                document.getElementById('c-edit').value = '';
+                document.getElementById('c-ref').value = '';
+                document.getElementById('c-notes').value = '';
+            }
+            document.getElementById('content-modal').classList.remove('hidden');
+        }
+        window.closeModals = function() { document.querySelectorAll('.fixed').forEach(m => m.classList.add('hidden')); }
+
+        window.handleCreateProject = function(e) {
+            e.preventDefault();
+            const name = document.getElementById('project-name-input').value.trim();
+            const pin = document.getElementById('project-pin-input').value.trim();
+            const folderName = document.getElementById('initial-folder-input').value.trim() || 'Plan Utama';
+            const logoFile = document.getElementById('project-logo-input').files[0];
+
+            if (!name || !pin) return;
+
+            const createProj = (logoData) => {
+                const newProj = { 
+                    id: 'proj_' + Date.now(), 
+                    name, 
+                    pin, 
+                    logo: logoData || '', 
+                    folders: [{ id: 'f_' + Date.now(), name: folderName, items: [] }] 
+                };
+                db.push(newProj); 
+                saveDB(); 
+                unlockedProjects[newProj.id] = true;
+                activeProjectId = newProj.id; 
+                activeFolderId = newProj.folders[0].id;
+                closeModals(); 
+                renderSidebar(); 
+                renderWorkspace();
+                updateHeaderButtonState();
+                document.getElementById('project-name-input').value = '';
+                document.getElementById('project-pin-input').value = '';
+                document.getElementById('project-logo-input').value = '';
+                document.getElementById('initial-folder-input').value = '';
+            };
+
+            if (logoFile) {
+                const reader = new FileReader();
+                reader.onload = (evt) => createProj(evt.target.result);
+                reader.readAsDataURL(logoFile);
+            } else {
+                createProj('');
+            }
+        }
+
+        window.handleCreatePlan = function(e) {
+            e.preventDefault();
+            const name = document.getElementById('plan-name-input').value.trim();
+            const project = db.find(p => p.id === activeProjectId);
+            if (project && name) {
+                if (!project.folders) project.folders = [];
+                const newFolder = { id: 'f_' + Date.now(), name, items: [] };
+                project.folders.push(newFolder); 
+                saveDB(); 
+                activeFolderId = newFolder.id;
+                closeModals(); 
+                renderSidebar(); 
+                renderWorkspace();
+                updateHeaderButtonState();
+                document.getElementById('plan-name-input').value = '';
+            }
+        }
+
+        window.handleSaveContent = function(e) {
+            e.preventDefault();
+            const { folder } = getActiveProjectAndFolder();
+            if (!folder) return;
+
+            const editId = document.getElementById('edit-content-id').value;
+            const takeVal = document.getElementById('c-take').value;
+
+            const err = validateTakeSchedule(takeVal, editId);
+            if (err) { alert(err); return; }
+
+            const newItem = {
+                id: editId || 'c_' + Date.now(),
+                week: document.getElementById('c-week').value,
+                title: document.getElementById('c-title').value.trim(),
+                type: document.getElementById('c-type').value,
+                uploadDate: document.getElementById('c-upload-date').value,
+                status: document.getElementById('c-status').value,
+                take: takeVal,
+                edit: document.getElementById('c-edit').value,
+                ref: document.getElementById('c-ref').value.trim(),
+                notes: document.getElementById('c-notes').value.trim()
+            };
+
+            if (!folder.items) folder.items = [];
+            if (editId) {
+                const idx = folder.items.findIndex(i => i.id === editId);
+                if (idx !== -1) folder.items[idx] = newItem;
+            } else {
+                folder.items.push(newItem);
+            }
+
+            saveDB();
+            closeModals();
+            renderWorkspace();
+            renderSidebar();
+        }
+
+        window.editContent = function(id) {
+            const { folder } = getActiveProjectAndFolder();
+            if (!folder || !folder.items) return;
+            const item = folder.items.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('edit-content-id').value = item.id;
+            document.getElementById('c-week').value = item.week;
+            document.getElementById('c-type').value = item.type;
+            document.getElementById('c-title').value = item.title;
+            document.getElementById('c-upload-date').value = item.uploadDate || '';
+            document.getElementById('c-status').value = item.status;
+            document.getElementById('c-take').value = item.take || '';
+            document.getElementById('c-edit').value = item.edit || '';
+            document.getElementById('c-ref').value = item.ref || '';
+            document.getElementById('c-notes').value = item.notes || '';
+
+            document.getElementById('content-modal-title').innerText = "Edit Konten";
+            openContentModal(true);
+        }
+
+        window.deleteContent = function(id) {
+            if (!confirm("Hapus konten ini?")) return;
+            const { folder } = getActiveProjectAndFolder();
+            if (!folder) return;
+            folder.items = folder.items.filter(i => i.id !== id);
+            saveDB(); renderWorkspace(); renderSidebar();
+        }
+
+        window.deleteFolder = function(pId, fId) {
+            if (!confirm("Hapus folder plan ini beserta isinya?")) return;
+            const proj = db.find(p => p.id === pId);
+            if (proj && proj.folders) {
+                proj.folders = proj.folders.filter(f => f.id !== fId);
+                if (activeFolderId === fId) {
+                    activeFolderId = (proj.folders[0] ? proj.folders[0].id : null);
+                }
+                saveDB(); renderSidebar(); renderWorkspace(); updateHeaderButtonState();
+            }
+        }
+
+        window.deleteProject = function(pId) {
+            if (!confirm("Hapus project ini beserta seluruh isinya?")) return;
+            db = db.filter(p => p.id !== pId);
+            delete unlockedProjects[pId];
+            if (projectGraceTimers[pId]) { clearTimeout(projectGraceTimers[pId]); delete projectGraceTimers[pId]; }
+            if (activeProjectId === pId) {
+                activeProjectId = null;
+                activeFolderId = null;
+            }
+            saveDB(); renderSidebar(); renderWorkspace(); updateHeaderButtonState();
+        }
+
+        window.openExportModal = function() {
+            const sel = document.getElementById('export-project-select');
+            sel.innerHTML = '';
+            db.forEach(p => { sel.innerHTML += `<option value="${p.id}">${p.name}</option>`; });
+            window.populateExportFolders();
+            document.getElementById('export-modal').classList.remove('hidden');
+        }
+
+        window.populateExportFolders = function() {
+            const pId = document.getElementById('export-project-select').value;
+            const fSel = document.getElementById('export-folder-select');
+            fSel.innerHTML = '';
+            const proj = db.find(p => p.id === pId);
+            if (proj && proj.folders) { proj.folders.forEach(f => { fSel.innerHTML += `<option value="${f.id}">${f.name}</option>`; }); }
+        }
+
+        window.executeExportPDF = function() {
+            const pId = document.getElementById('export-project-select').value;
+            const fId = document.getElementById('export-folder-select').value;
+            const proj = db.find(p => p.id === pId);
+            if (!proj) return;
+            const folder = (proj.folders || []).find(f => f.id === fId);
+            if (!folder) return;
+            closeModals();
+
+            const container = document.getElementById('pdf-export-container');
+            container.innerHTML = `
+                <div style="padding: 25px; font-family: sans-serif; width: 750px; background: white; color: #0f172a;">
+                    <h2 style="color: #4f46e5; margin:0;">CONTENT PLAN REPORT</h2>
+                    <p style="font-size: 12px; color: #64748b;">Project: <b>${proj.name}</b> | Periode: <b>${folder.name}</b></p>
+                    <table border="1" cellspacing="0" cellpadding="6" style="width:100%; border-collapse: collapse; font-size: 11px; margin-top: 10px;">
+                        <tr style="background: #f1f5f9;"><th>Week</th><th>Jadwal</th><th>Judul</th><th>Jenis</th><th>Status</th><th>Notes</th></tr>
+                        ${(folder.items || []).map(i => `<tr><td>${i.week}</td><td>${formatDisplayDateTime(i.uploadDate)}</td><td><b>${i.title}</b></td><td>${i.type}</td><td>${i.status}</td><td>${i.notes || '-'}</td></tr>`).join('')}
+                    </table>
+                </div>
+            `;
+            container.classList.add('hidden');
+            html2pdf().from(container).set({
+                margin: 10,
+                filename: `Plan_${proj.name}_${folder.name}.pdf`.replace(/\s+/g,'_'),
+                jsPDF: { orientation: 'landscape' }
+            }).save().then(() => { container.classList.add('hidden'); container.innerHTML = ''; });
+        }
+
+        window.handleLogoClick = handleLogoClick;
+        window.verifyPinAction = verifyPinAction;
+        window.togglePinVisibility = togglePinVisibility;
+        window.toggleNewProjPinVisibility = toggleNewProjPinVisibility;
+        window.openScheduleModal = openScheduleModal;
+        window.saveRestDaysSettings = saveRestDaysSettings;
+        window.autoCalculateEditingDate = autoCalculateEditingDate;
+        window.toggleFilter = toggleFilter;
+
+        renderSidebar();
+        renderWorkspace();
+        updateHeaderButtonState();
+    </script>
+</body>
+</html>
